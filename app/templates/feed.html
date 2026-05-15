@@ -1,0 +1,36 @@
+﻿{% extends "base.html" %}
+{% block title %}Power Papers - Latest Papers{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Latest Power &amp; Energy Papers</h2>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col">
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('feed.index') }}" class="btn btn-sm btn-outline-primary {% if not selected_source %}active{% endif %}">All</a>
+            {% for source in sources %}
+            <a href="{{ url_for('feed.index', source=source, q=query) }}" class="btn btn-sm btn-outline-primary {% if selected_source == source %}active{% endif %}">{{ source }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div id="paper-list" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% include "_paper_cards.html" %}
+</div>
+
+{% if pagination.pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% for page_num in range(1, pagination.pages + 1) %}
+        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('feed.index', page=page_num, source=selected_source, q=query) }}">{{ page_num }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

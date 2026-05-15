@@ -1,0 +1,47 @@
+﻿{% for paper in papers %}
+<div class="col">
+    <div class="card h-100 paper-card">
+        <div class="card-body">
+            {% if paper.is_new %}
+            <span class="badge bg-danger float-end">NEW</span>
+            {% endif %}
+            <h6 class="card-title">
+                <a href="{{ url_for('feed.detail', paper_id=paper.id) }}" class="text-decoration-none text-light">
+                    {{ paper.title[:120] }}{% if paper.title|length > 120 %}...{% endif %}
+                </a>
+            </h6>
+            {% if paper.authors %}
+            <p class="card-text text-muted small">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816zM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275zM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>
+                {{ paper.authors[:80] }}{% if paper.authors|length > 80 %}...{% endif %}
+            </p>
+            {% endif %}
+            {% if paper.abstract %}
+            <p class="card-text small abstract-preview">{{ paper.abstract[:150] }}{% if paper.abstract|length > 150 %}...{% endif %}</p>
+            {% endif %}
+            {% if paper.keywords %}
+            <div class="mb-2">
+                {% for kw in paper.keywords.split(',')[:3] %}
+                <span class="badge bg-secondary me-1">#{{ kw.strip()[:20] }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                <span class="badge bg-info">{{ paper.source }}</span>
+                {% if paper.published_date %}{{ paper.published_date }}{% endif %}
+            </small>
+            <div>
+                <a href="{{ paper.source_url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="View Original">Link</a>
+                <a href="{{ url_for('kakao.share', paper_id=paper.id) }}" class="btn btn-sm btn-outline-warning" title="Send to my KakaoTalk">Me</a>
+                <button type="button" class="btn btn-sm btn-outline-warning" title="Send to friend" data-friend-share="{{ paper.id }}">Friend</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="col-12">
+    <div class="alert alert-info">No papers found.</div>
+</div>
+{% endfor %}
