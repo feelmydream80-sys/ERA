@@ -371,10 +371,11 @@ This paper presents a novel deep learning framework...
 ## Changelog
 | Date | Change | Reason |
 |------|--------|--------|
+| 2026-05-19 | 크롤러 중복 URL 버그 수정: `seen_urls` set + `db.session.rollback()` | 동일 URL이 여러 키워드에서 중복 수집되어 UNIQUE constraint 위반 |
+| 2026-05-19 | GitHub Webhook 자동 업데이트 추가 (`/webhook/update`) | git push만 하면 PythonAnywhere 자동 반영 |
 | 2026-05-19 | AGENTS.md에 PythonAnywhere 배포 메뉴얼 추가 (Deployment 섹션) | PythonAnywhere 운영/업데이트 절차 문서화 |
 | 2026-05-19 | Kakao REST API 친구 공유 제거 → JS SDK 공유로 대체 | Biz App 필수로 REST API 친구 공유 불가 |
 | 2026-05-19 | WSGI 파일에 `activate_this.py` 대신 `sys.path.insert(0, ...)` 사용 | Python 3.10 venv에 `activate_this.py` 없음 |
-|------|--------|--------|
 | 2026-05-15 | Kakao API URL 수정: `/talk/message/send/me` → `/talk/memo/default/send` | 잘못된 URL로 404 발생 |
 | 2026-05-15 | Feed 템플릿 → Text 템플릿으로 변경 | 200자 제한으로 abstract+번역 불가 |
 | 2026-05-15 | Google 번역 추가 (deep-translator) | 영문 abstract → 한글 번역 제공 |
