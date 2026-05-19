@@ -45,3 +45,6 @@ a.text-light:hover {
     max-height: 5000px;
     overflow-y: auto;
 }
+.abstract-ko-overlay .card-text {
+    line-height: 1.9;
+}
