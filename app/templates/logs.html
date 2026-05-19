@@ -8,9 +8,9 @@
 </div>
 
 <div class="row mb-4">
-    <div class="col-md-6">
+    <div class="col-md-8">
         <div class="card">
-            <div class="card-body d-flex align-items-center gap-3">
+            <div class="card-body d-flex align-items-center gap-3 flex-wrap">
                 <div>
                     {% if scheduler_running %}
                     <span class="badge bg-success fs-6">Scheduler Active</span>
@@ -21,11 +21,16 @@
                 <div class="text-muted small">
                     {% if next_run %}
                     Next crawl: <strong>{{ next_run.strftime('%Y-%m-%d %H:%M:%S') }}</strong>
-
                     {% else %}
                     No crawl scheduled
                     {% endif %}
                 </div>
+                <form method="POST" action="{{ url_for('logs.run') }}" class="ms-auto">
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                        Run Crawlers Now
+                    </button>
+                </form>
             </div>
         </div>
     </div>

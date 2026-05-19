@@ -10,7 +10,7 @@ from app.crawlers.crossref import CrossrefCrawler
 from app.crawlers.kci import KCICrawler
 from app.crawlers.kci_openapi import KCIOpenAPICrawler
 import atexit
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 
 scheduler = BackgroundScheduler()
@@ -128,6 +128,7 @@ def init_scheduler(app):
         args=[app],
         id="crawl_papers",
         replace_existing=True,
+        next_run_time=datetime.now(timezone.utc) + timedelta(minutes=10),
     )
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown())

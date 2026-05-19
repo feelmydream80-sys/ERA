@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template
+import threading
+from flask import Blueprint, render_template, request, current_app, flash, redirect, url_for
 from app.models import CrawlLog
-from app.scheduler import scheduler
+from app.scheduler import scheduler, run_all_crawlers
 from datetime import datetime, timezone
 
 bp = Blueprint("logs", __name__, url_prefix="/logs")
@@ -26,3 +27,11 @@ def index():
         next_run=next_run,
         now=datetime.now(timezone.utc),
     )
+
+
+@bp.route("/run", methods=["POST"])
+def run():
+    app = current_app._get_current_object()
+    threading.Thread(target=run_all_crawlers, args=(app,), daemon=True).start()
+    flash("Crawlers started in background", "success")
+    return redirect(url_for("logs.index"))
