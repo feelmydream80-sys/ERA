@@ -14,6 +14,7 @@ def index():
     page = request.args.get("page", 1, type=int)
     source = request.args.get("source", "")
     query = request.args.get("q", "")
+    grouped = request.args.get("grouped", type=int)
 
     papers_query = Paper.query.order_by(Paper.created_at.desc())
 
@@ -26,12 +27,32 @@ def index():
             | Paper.keywords.ilike(f"%{query}%")
         )
 
+    sources = [s[0] for s in Paper.query.with_entities(Paper.source).distinct().all()]
+
+    if grouped:
+        grouped_papers = {}
+        for s in sources:
+            q = Paper.query.order_by(Paper.created_at.desc())
+            if query:
+                q = q.filter(
+                    Paper.title.ilike(f"%{query}%")
+                    | Paper.abstract.ilike(f"%{query}%")
+                    | Paper.keywords.ilike(f"%{query}%")
+                )
+            grouped_papers[s] = q.filter(Paper.source == s).limit(12).all()
+        return render_template(
+            "feed.html",
+            grouped_papers=grouped_papers,
+            sources=sources,
+            selected_source=source,
+            query=query,
+            grouped=True,
+        )
+
     pagination = papers_query.paginate(
         page=page, per_page=20, error_out=False
     )
     papers = pagination.items
-
-    sources = [s[0] for s in Paper.query.with_entities(Paper.source).distinct().all()]
 
     return render_template(
         "feed.html",
@@ -40,6 +61,7 @@ def index():
         sources=sources,
         selected_source=source,
         query=query,
+        grouped=False,
     )
 
 

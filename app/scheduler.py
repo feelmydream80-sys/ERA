@@ -7,6 +7,8 @@ from app.crawlers.ieee import IEEECrawler
 from app.crawlers.arxiv import ArxivCrawler
 from app.crawlers.openalex import OpenAlexCrawler
 from app.crawlers.crossref import CrossrefCrawler
+from app.crawlers.kci import KCICrawler
+from app.crawlers.kci_openapi import KCIOpenAPICrawler
 import atexit
 from datetime import datetime, timezone
 
@@ -35,11 +37,12 @@ def translate_abstract(text):
 
 
 def run_all_crawlers(app):
-    crawlers = [ArxivCrawler(), IEEECrawler(), OpenAlexCrawler(), CrossrefCrawler()]
+    crawlers = [ArxivCrawler(), IEEECrawler(), OpenAlexCrawler(), CrossrefCrawler(), KCICrawler()]
     ts = datetime.now().strftime("%H:%M:%S")
     print(f"\n[{ts}] === Crawler Run Started ===")
     total_new = 0
     title_dup_count = 0
+    per_source = []
     with app.app_context():
         seen_urls = set()
         seen_titles = set()
@@ -85,14 +88,20 @@ def run_all_crawlers(app):
                         new_count += 1
                 db.session.commit()
                 total_new += new_count
+                per_source.append(f"{crawler.name}: {len(papers)} found, {new_count} new")
                 crawler.log(f"complete: {len(papers)} found, {new_count} new")
+                app.logger.info(f"Crawler {crawler.name}: {len(papers)} found, {new_count} new")
             except Exception as e:
                 db.session.rollback()
+                per_source.append(f"{crawler.name}: ERROR {e}")
                 crawler.log(f"ERROR: {e}")
                 app.logger.error(f"Crawler {crawler.name} failed: {e}")
         ts = datetime.now().strftime("%H:%M:%S")
         total_db = Paper.query.count()
-        print(f"  [{ts}] === Crawler Run Finished: {total_new} new papers (DB total: {total_db}, title dups skipped: {title_dup_count}) ===")
+        summary = " | ".join(per_source)
+        print(f"  [{ts}] === Crawler Run Finished: {total_new} new papers (DB total: {total_db}, dups: {title_dup_count}) ===")
+        print(f"  [{ts}] {summary}")
+        app.logger.info(f"Crawler run finished: {total_new} new, DB={total_db}, dups={title_dup_count} | {summary}")
 
 
 def init_scheduler(app):
