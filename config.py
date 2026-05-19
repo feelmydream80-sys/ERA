@@ -23,4 +23,6 @@ class Config:
     # IMPORTANT: This is DIFFERENT from the REST API key
     KAKAO_JAVASCRIPT_KEY = os.environ.get("KAKAO_JAVASCRIPT_KEY", "f95d003dc4f3c29be2866a308947b71d")
 
+    WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "power-papers-webhook-secret-2026")
+
     PAPERS_PER_PAGE = 20

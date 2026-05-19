@@ -1,5 +1,9 @@
 ﻿import json
-from flask import Blueprint, render_template, request
+import subprocess
+import os
+import hmac
+import hashlib
+from flask import Blueprint, render_template, request, abort, current_app
 from app.models import Paper
 
 bp = Blueprint("feed", __name__, url_prefix="/")
@@ -56,3 +60,35 @@ def health():
         "total_papers": total,
         "sources": sources,
     }
+
+
+@bp.route("/webhook/update", methods=["POST"])
+def webhook_update():
+    secret = current_app.config.get("WEBHOOK_SECRET", "").encode()
+    signature = request.headers.get("X-Hub-Signature-256", "")
+    if not signature:
+        current_app.logger.warning("Webhook: missing signature header")
+        abort(403)
+
+    expected = "sha256=" + hmac.new(secret, request.data, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected):
+        current_app.logger.warning("Webhook: invalid signature")
+        abort(403)
+
+    repo_path = "/home/feelmydream/daq"
+    result = subprocess.run(
+        ["git", "pull", "origin", "master"],
+        cwd=repo_path,
+        capture_output=True,
+        text=True,
+    )
+    current_app.logger.info(f"Webhook git pull: {result.stdout.strip()}")
+
+    if result.returncode != 0:
+        current_app.logger.error(f"Webhook git pull failed: {result.stderr.strip()}")
+        return "Git pull failed", 500
+
+    os.utime("/var/www/feelmydream_pythonanywhere_com_wsgi.py", None)
+    current_app.logger.info("Webhook: WSGI file touched -> reload triggered")
+
+    return "OK", 200
