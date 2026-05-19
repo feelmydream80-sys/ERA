@@ -42,6 +42,7 @@ class Paper(db.Model):
     title = db.Column(db.String(500), nullable=False, index=True)
     authors = db.Column(db.Text, default="")
     abstract = db.Column(db.Text, default="")
+    abstract_ko = db.Column(db.Text, default="")
     keywords = db.Column(db.Text, default="")
     source = db.Column(db.String(100), nullable=False, index=True)
     source_url = db.Column(db.String(500), unique=True, nullable=False)

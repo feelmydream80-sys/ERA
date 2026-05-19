@@ -1,5 +1,6 @@
 ﻿from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from deep_translator import GoogleTranslator
 from app import db
 from app.models import Paper
 from app.crawlers.ieee import IEEECrawler
@@ -11,6 +12,16 @@ from datetime import datetime, timezone
 
 
 scheduler = BackgroundScheduler()
+
+
+def translate_abstract(text):
+    if not text or len(text) < 10:
+        return ""
+    try:
+        source = "en" if all(ord(c) < 128 for c in text[:100]) else "auto"
+        return GoogleTranslator(source=source, target="ko").translate(text[:2000])
+    except Exception:
+        return ""
 
 
 def run_all_crawlers(app):
@@ -32,10 +43,12 @@ def run_all_crawlers(app):
                     seen_urls.add(url)
                     existing = Paper.query.filter_by(source_url=url).first()
                     if not existing:
+                        abstract_text = p.get("abstract", "")
                         paper = Paper(
                             title=p["title"],
                             authors=p.get("authors", ""),
-                            abstract=p.get("abstract", ""),
+                            abstract=abstract_text,
+                            abstract_ko=translate_abstract(abstract_text),
                             keywords=p.get("keywords", ""),
                             source=p.get("source", crawler.name),
                             source_url=url,
