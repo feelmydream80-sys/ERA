@@ -1,4 +1,3 @@
-import threading
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_admin import Admin
@@ -36,14 +35,11 @@ def create_app(config_class=Config):
     from app.admin import register_admin
     register_admin(admin_instance)
 
-    from app.scheduler import init_scheduler, run_all_crawlers
+    from app.scheduler import init_scheduler
     init_scheduler(app)
 
     with app.app_context():
         db.create_all()
         seed_default_keywords()
-
-    thread = threading.Thread(target=run_all_crawlers, args=[app], daemon=True)
-    thread.start()
 
     return app

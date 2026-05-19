@@ -3,7 +3,7 @@ import subprocess
 import os
 import hmac
 import hashlib
-from flask import Blueprint, render_template, request, abort, current_app
+from flask import Blueprint, render_template, request, abort, current_app, send_from_directory
 from app.models import Paper
 
 bp = Blueprint("feed", __name__, url_prefix="/")
@@ -47,6 +47,13 @@ def index():
 def detail(paper_id):
     paper = Paper.query.get_or_404(paper_id)
     return render_template("detail.html", paper=paper)
+
+
+@bp.route("/favicon.ico")
+def favicon():
+    return send_from_directory(
+        current_app.static_folder, "icons/icon.svg", mimetype="image/svg+xml"
+    )
 
 
 @bp.route("/health")
