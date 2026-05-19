@@ -25,4 +25,8 @@ class Config:
 
     WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "power-papers-webhook-secret-2026")
 
+    # KCI Open API ServiceKey (from data.go.kr)
+    # Register: https://www.data.go.kr/data/3049042/openapi.do
+    KCI_SERVICE_KEY = os.environ.get("KCI_SERVICE_KEY", "")
+
     PAPERS_PER_PAGE = 20

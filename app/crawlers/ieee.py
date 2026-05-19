@@ -1,6 +1,6 @@
 ﻿import requests
-from bs4 import BeautifulSoup
 from urllib.parse import quote
+from datetime import datetime
 from .base import BaseCrawler
 
 
@@ -10,31 +10,63 @@ class IEEECrawler(BaseCrawler):
     def crawl(self):
         papers = []
         keywords = self.get_keywords(language="en")
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/plain, */*",
+            "Origin": "https://ieeexplore.ieee.org",
+            "Referer": "https://ieeexplore.ieee.org/search/searchresult.jsp",
+            "X-Requested-With": "XMLHttpRequest",
+        }
 
         for kw in keywords:
             self.log(f'searching "{kw}"...')
-            url = f"https://ieeexplore.ieee.org/search/searchresult.jsp?queryText={quote(kw)}&highlight=true&returnFacets=ALL&returnType=SEARCH&matchPubs=true&pageNumber=1&pageSize=10"
             try:
-                resp = requests.get(url, headers=headers, timeout=15)
+                resp = requests.post(
+                    "https://ieeexplore.ieee.org/rest/search",
+                    json={"queryText": kw, "pageNumber": 1, "pageSize": 10},
+                    headers=headers, timeout=15,
+                )
                 if resp.status_code != 200:
                     self.log(f"HTTP {resp.status_code} for '{kw}'")
                     continue
-                soup = BeautifulSoup(resp.text, "lxml")
-                for item in soup.select("xpl-results-list xpl-results-item"):
-                    title_el = item.select_one("h2 a")
-                    if not title_el:
-                        title_el = item.select_one("xpl-title a")
-                    if not title_el:
+                d = resp.json()
+                for rec in d.get("records") or []:
+                    if rec.get("isStandard") or rec.get("contentType", "") in ("IEEE Standards", "Standards"):
                         continue
-                    title_text = title_el.get_text(strip=True)
-                    href = title_el.get("href", "")
+                    title = rec.get("articleTitle") or rec.get("title", "")
+                    if not title:
+                        continue
+                    href = rec.get("publicationLink") or rec.get("documentLink", "")
                     if href and not href.startswith("http"):
                         href = "https://ieeexplore.ieee.org" + href
+                    abstract = rec.get("abstract", "") or ""
+                    doi = rec.get("doi", "") or ""
+                    authors = "; ".join(
+                        a.get("fullName", a.get("preferredName", ""))
+                        for a in (rec.get("authors") or [])
+                    )
+                    pub_date = None
+                    pd_str = rec.get("publicationDate", "") or ""
+                    if pd_str:
+                        try:
+                            for fmt in ["%d %b. %Y", "%d %b %Y", "%B %Y", "%b. %Y", "%Y"]:
+                                try:
+                                    dt = datetime.strptime(pd_str, fmt)
+                                    pub_date = dt.date()
+                                    break
+                                except ValueError:
+                                    continue
+                        except Exception:
+                            pass
                     papers.append({
-                        "title": title_text,
+                        "title": title,
                         "source_url": href,
                         "source": self.name,
+                        "authors": authors,
+                        "abstract": abstract,
+                        "doi": doi,
+                        "published_date": pub_date,
                         "keywords": kw,
                     })
             except Exception as e:

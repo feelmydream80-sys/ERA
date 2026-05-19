@@ -13,7 +13,7 @@
 ```
 C:\dev\daq\
 ├── run.py              # 실행 파일
-├── config.py           # 설정 (DB, Kakao API)
+├── config.py           # 설정 (DB, Kakao API, KCI)
 ├── requirements.txt
 ├── AGENTS.md
 ├── app/
@@ -27,11 +27,14 @@ C:\dev\daq\
 │   │   ├── kakao.py    # Kakao OAuth + 나에게 보내기
 │   │   └── settings.py # 검색어 관리
 │   ├── crawlers/
-│   │   ├── base.py     # 공통 (키워드 로드, 로깅)
-│   │   ├── arxiv.py    # arXiv API (공개)
-│   │   ├── ieee.py     # IEEE Xplore 검색
-│   │   ├── kci.py      # KCI (한국학술지)
-│   │   └── kee.py      # DBpia (한국 전력/에너지)
+│   │   ├── base.py        # 공통 (키워드 로드, 로깅)
+│   │   ├── arxiv.py       # arXiv API (공개)
+│   │   ├── ieee.py        # IEEE Xplore REST API
+│   │   ├── openalex.py    # OpenAlex API (오픈액세스)
+│   │   ├── crossref.py    # Crossref API (DOI 기반)
+│   │   ├── kci_openapi.py # KCI 공공데이터 Open API
+│   │   ├── kci.py         # (deprecated) KCI 웹 스크래핑
+│   │   └── kee.py         # (deprecated) DBpia 웹 스크래핑
 │   ├── templates/
 │   │   ├── base.html, feed.html, detail.html
 │   │   ├── _paper_cards.html, settings.html
@@ -170,6 +173,7 @@ os.environ['KAKAO_REST_API_KEY'] = '2331196ef286dc735ee7735b32a2e6bf'
 os.environ['KAKAO_CLIENT_SECRET'] = '9Yd4YywG7cabXMOpT2iISlANNKlYnA5D'
 os.environ['KAKAO_JAVASCRIPT_KEY'] = 'f95d003dc4f3c29be2866a308947b71d'
 os.environ['KAKAO_REDIRECT_URI'] = 'https://feelmydream.pythonanywhere.com/kakao/callback'
+os.environ['KCI_SERVICE_KEY'] = ''  # 공공데이터포털에서 발급받은 ServiceKey 입력
 os.environ['WEBHOOK_SECRET'] = 'power-papers-webhook-secret-2026'
 
 from app import create_app
@@ -320,6 +324,7 @@ PythonAnywhere 무료 티어는 항상 켜져 있지 않아 매시간 크롤링�
 | `KAKAO_JAVASCRIPT_KEY` | `f95d003dc4f3c29be2866a308947b71d` | WSGI 파일 또는 환경변수 |
 | `SECRET_KEY` | `power-papers-prod-secret-key-2026` | WSGI 파일 또는 환경변수 (운영 시 변경 권장) |
 | `WEBHOOK_SECRET` | `power-papers-webhook-secret-2026` | WSGI 파일 또는 환경변수 (GitHub Webhook 시크릿) |
+| `KCI_SERVICE_KEY` | (data.go.kr 발급) | WSGI 파일 또는 환경변수 (없으면 KCI 수집 스킵) |
 
 ---
 
@@ -336,9 +341,30 @@ PythonAnywhere 무료 티어는 항상 켜져 있지 않아 매시간 크롤링�
 
 ## Crawlers
 - 매시간 APScheduler 실행
-- IEEE, arXiv, KCI, DBpia 4개 소스
+- **활성 소스**: arXiv, IEEE (REST API), OpenAlex, CrossRef (4개)
+- **비활성 소스**: KCI 공공데이터 Open API (ServiceKey 설정 시 활성화)
+- **제거된 소스**: KCI 웹스크래핑, DBpia (한국 IP 차단)
 - Settings 페이지에서 검색어 추가/활성화 가능
 - 기본 검색어 20개 (영어 10 + 한국어 10)
+
+### Data Source Status (2026-05-19 기준)
+
+| Source | Status | Method | IP Required |
+|--------|--------|--------|-------------|
+| arXiv | ✅ Working | Free API (export.arxiv.org) | Any |
+| IEEE Xplore | ✅ Working | REST API (rest/search) | Any |
+| OpenAlex | ✅ Working | Free API (api.openalex.org) | Any |
+| Crossref | ✅ Working (no abstract) | Free API (api.crossref.org) | Any |
+| KCI (OpenAPI) | ⏸️ Waiting for ServiceKey | 공공데이터 Open API | Any (data.go.kr infra) |
+| KCI (Scraping) | ❌ Removed | Korean IP blocked | Korea only |
+| DBpia | ❌ Removed | Korean IP blocked + JS | Korea only |
+
+### KCI Open API 등록 방법
+1. https://www.data.go.kr/data/3049042/openapi.do 접속
+2. 로그인 → "활용신청" 버튼 클릭
+3. 승인 유형: 자동승인 (개발단계)
+4. 발급받은 ServiceKey를 환경변수 `KCI_SERVICE_KEY`에 설정
+5. PythonAnywhere: Web 탭 → WSGI 파일에 `os.environ['KCI_SERVICE_KEY'] = '...'` 추가
 
 ## KakaoTalk Setup
 1. https://developers.kakao.com 에서 앱 생성
@@ -386,3 +412,9 @@ This paper presents a novel deep learning framework...
 | 2026-05-15 | SearchKeyword DB 모델 추가 + 기본 20개 시드 | 영어/한국어 각 10개 기본 검색어 |
 | 2026-05-15 | 크롤러 전면 개선 (arXiv, IEEE, KCI, DBpia) | 실제 사이트 검색 기반, 키워드별 검색 |
 | 2026-05-15 | 초기 크롤링 백그라운드 스레드로 분리 | 앱 시작 속도 개선 |
+| 2026-05-19 | IEEE 크롤러 REST API로 전면 개편 (HTML 스크래핑 제거) | SPA 페이지 구조 + 안티봇으로 HTML 수집 불가 |
+| 2026-05-19 | OpenAlex 크롤러 추가 (api.openalex.org) | 무료 API, 초록/저자/인용 수 모두 제공 |
+| 2026-05-19 | Crossref 크롤러 추가 (api.crossref.org) | DOI 기반 보조 소스 |
+| 2026-05-19 | KCI 공공데이터 Open API 크롤러 추가 (apis.data.go.kr) | IP 무관, ServiceKey 등록 시 활성화 |
+| 2026-05-19 | KCI 웹스크래핑 + DBpia 크롤러 비활성화 | 한국 IP 차단으로 수집 불가 |
+| 2026-05-19 | AGENTS.md: Data Source Status 표 + KCI Open API 등록 가이드 추가 | 사용자가 바로 ServiceKey 등록 가능하도록 |
