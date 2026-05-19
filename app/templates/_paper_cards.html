@@ -35,7 +35,8 @@
             <div>
                 <a href="{{ paper.source_url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="View Original">Link</a>
                 <a href="{{ url_for('kakao.share', paper_id=paper.id) }}" class="btn btn-sm btn-outline-warning" title="Send to my KakaoTalk">Me</a>
-                <button type="button" class="btn btn-sm btn-outline-warning" title="Send to friend" data-friend-share="{{ paper.id }}">Friend</button>
+                <button type="button" class="btn btn-sm btn-outline-warning" title="Share to KakaoTalk"
+                    onclick='sharePaperViaKakao({{ paper.title|tojson }}, {{ paper.source_url|tojson }})'>Share</button>
             </div>
         </div>
     </div>

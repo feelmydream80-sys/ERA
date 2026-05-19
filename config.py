@@ -18,7 +18,9 @@ class Config:
     KAKAO_AUTH_URL = "https://kauth.kakao.com/oauth/authorize"
     KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
     KAKAO_SEND_ME_URL = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
-    KAKAO_SEND_FRIEND_URL = "https://kapi.kakao.com/v2/api/talk/message/send"
-    KAKAO_FRIENDS_URL = "https://kapi.kakao.com/v1/api/talk/friends"
+
+    # Kakao JavaScript SDK key (from Kakao Developers > Platform Keys)
+    # IMPORTANT: This is DIFFERENT from the REST API key
+    KAKAO_JAVASCRIPT_KEY = os.environ.get("KAKAO_JAVASCRIPT_KEY", "f95d003dc4f3c29be2866a308947b71d")
 
     PAPERS_PER_PAGE = 20

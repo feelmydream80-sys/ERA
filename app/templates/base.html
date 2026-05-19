@@ -56,49 +56,35 @@
         {% block content %}{% endblock %}
     </div>
 
-    <div class="modal fade" id="friendModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content bg-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title">Share to KakaoTalk Friend</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="friendModalBody">
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-warning" role="status"></div>
-                        <p class="mt-2">Loading friends...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js" crossorigin="anonymous"></script>
     <script>
-    document.addEventListener('click', function(e) {
-        var btn = e.target.closest('[data-friend-share]');
-        if (btn) {
-            var paperId = btn.getAttribute('data-friend-share');
-            var body = document.getElementById('friendModalBody');
-            body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-warning" role="status"></div><p class="mt-2">Loading friends...</p></div>';
-            htmx.ajax('GET', '/kakao/friend-list/' + paperId, {target: '#friendModalBody', swap: 'innerHTML'});
-            var modal = new bootstrap.Modal(document.getElementById('friendModal'));
-            modal.show();
+    (function() {
+        var jsKey = '{{ config.KAKAO_JAVASCRIPT_KEY }}';
+        if (jsKey && typeof Kakao !== 'undefined') {
+            Kakao.init(jsKey);
         }
-    });
+    })();
 
-    document.body.addEventListener('htmx:afterSwap', function(e) {
-        if (e.detail.target.id === 'friendModalBody') {
-            var successDiv = e.detail.target.querySelector('.text-success');
-            if (successDiv) {
-                setTimeout(function() {
-                    var modal = bootstrap.Modal.getInstance(document.getElementById('friendModal'));
-                    if (modal) modal.hide();
-                    location.reload();
-                }, 1500);
-            }
+    function sharePaperViaKakao(title, url) {
+        if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
+            alert('Kakao Share is not initialized. Please check your JavaScript key configuration.');
+            return;
         }
-    });
+        var text = '📄 ' + title;
+        if (text.length > 200) {
+            text = text.substring(0, 197) + '...';
+        }
+        Kakao.Share.sendDefault({
+            objectType: 'text',
+            text: text,
+            link: {
+                webUrl: url,
+                mobileWebUrl: url
+            },
+            buttonTitle: 'View Paper'
+        });
+    }
     </script>
     <script>
     if ('serviceWorker' in navigator) {
