@@ -24,8 +24,13 @@ def run_all_crawlers(app):
                 crawler.log("starting...")
                 papers = crawler.crawl()
                 new_count = 0
+                seen_urls = set()
                 for p in papers:
-                    existing = Paper.query.filter_by(source_url=p["source_url"]).first()
+                    url = p["source_url"]
+                    if not url or url in seen_urls:
+                        continue
+                    seen_urls.add(url)
+                    existing = Paper.query.filter_by(source_url=url).first()
                     if not existing:
                         paper = Paper(
                             title=p["title"],
@@ -33,7 +38,7 @@ def run_all_crawlers(app):
                             abstract=p.get("abstract", ""),
                             keywords=p.get("keywords", ""),
                             source=p.get("source", crawler.name),
-                            source_url=p["source_url"],
+                            source_url=url,
                             published_date=p.get("published_date"),
                             crawled_at=datetime.now(timezone.utc),
                             is_new=True,
@@ -44,6 +49,7 @@ def run_all_crawlers(app):
                 total_new += new_count
                 crawler.log(f"complete: {len(papers)} found, {new_count} new")
             except Exception as e:
+                db.session.rollback()
                 crawler.log(f"ERROR: {e}")
                 app.logger.error(f"Crawler {crawler.name} failed: {e}")
         ts = datetime.now().strftime("%H:%M:%S")
