@@ -371,6 +371,7 @@ This paper presents a novel deep learning framework...
 ## Changelog
 | Date | Change | Reason |
 |------|--------|--------|
+| 2026-05-19 | 초기 시작 시 크롤링 제거 + `/favicon.ico` 라우트 추가 | cold start 502/504 timeout 방지, 404 해결 |
 | 2026-05-19 | 크롤러 중복 URL 버그 수정: `seen_urls` set + `db.session.rollback()` | 동일 URL이 여러 키워드에서 중복 수집되어 UNIQUE constraint 위반 |
 | 2026-05-19 | GitHub Webhook 자동 업데이트 추가 (`/webhook/update`) | git push만 하면 PythonAnywhere 자동 반영 |
 | 2026-05-19 | AGENTS.md에 PythonAnywhere 배포 메뉴얼 추가 (Deployment 섹션) | PythonAnywhere 운영/업데이트 절차 문서화 |
