@@ -29,7 +29,7 @@
             {% if paper.abstract_ko %}
             <div class="abstract-ko-overlay">
                 <p class="small mb-1 text-info fw-bold">📝 한글 요약</p>
-                <p class="card-text small">{{ paper.abstract_ko[:300] }}{% if paper.abstract_ko|length > 300 %}...{% endif %}</p>
+                <p class="card-text small">{{ paper.abstract_ko }}</p>
             </div>
             {% endif %}
         </div>
