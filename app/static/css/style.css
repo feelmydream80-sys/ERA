@@ -1,4 +1,7 @@
-﻿body {
+﻿html {
+    overflow-y: scroll;
+}
+body {
     background-color: #111;
     color: #eee;
 }

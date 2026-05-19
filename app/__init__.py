@@ -26,11 +26,12 @@ def create_app(config_class=Config):
     db.init_app(app)
     admin_instance.init_app(app)
 
-    from app.views import feed, search, kakao, settings
+    from app.views import feed, search, kakao, settings, logs
     app.register_blueprint(feed.bp)
     app.register_blueprint(search.bp)
     app.register_blueprint(kakao.bp)
     app.register_blueprint(settings.bp)
+    app.register_blueprint(logs.bp)
 
     from app.admin import register_admin
     register_admin(admin_instance)

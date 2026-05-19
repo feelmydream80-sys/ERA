@@ -67,3 +67,16 @@ class Paper(db.Model):
             "crawled_at": self.crawled_at.isoformat() if self.crawled_at else "",
             "is_new": self.is_new,
         }
+
+
+class CrawlLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    source = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="started")
+    found_count = db.Column(db.Integer, default=0)
+    new_count = db.Column(db.Integer, default=0)
+    message = db.Column(db.Text, default="")
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f"<CrawlLog {self.source} {self.status} @ {self.created_at}>"

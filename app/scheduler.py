@@ -2,7 +2,7 @@
 from apscheduler.triggers.interval import IntervalTrigger
 from deep_translator import GoogleTranslator
 from app import db
-from app.models import Paper
+from app.models import Paper, CrawlLog
 from app.crawlers.ieee import IEEECrawler
 from app.crawlers.arxiv import ArxivCrawler
 from app.crawlers.openalex import OpenAlexCrawler
@@ -47,6 +47,9 @@ def run_all_crawlers(app):
         seen_urls = set()
         seen_titles = set()
         for crawler in crawlers:
+            log_start = CrawlLog(source=crawler.name, status="started", message="Crawling...", created_at=datetime.now(timezone.utc))
+            db.session.add(log_start)
+            db.session.commit()
             try:
                 crawler.log("starting...")
                 papers = crawler.crawl()
@@ -88,12 +91,26 @@ def run_all_crawlers(app):
                         new_count += 1
                 db.session.commit()
                 total_new += new_count
-                per_source.append(f"{crawler.name}: {len(papers)} found, {new_count} new")
-                crawler.log(f"complete: {len(papers)} found, {new_count} new")
-                app.logger.info(f"Crawler {crawler.name}: {len(papers)} found, {new_count} new")
+                summary_str = f"{len(papers)} found, {new_count} new"
+                per_source.append(f"{crawler.name}: {summary_str}")
+                log_entry = CrawlLog(
+                    source=crawler.name, status="ok",
+                    found_count=len(papers), new_count=new_count,
+                    message=summary_str, created_at=datetime.now(timezone.utc),
+                )
+                db.session.add(log_entry)
+                db.session.commit()
+                crawler.log(f"complete: {summary_str}")
+                app.logger.info(f"Crawler {crawler.name}: {summary_str}")
             except Exception as e:
                 db.session.rollback()
                 per_source.append(f"{crawler.name}: ERROR {e}")
+                log_entry = CrawlLog(
+                    source=crawler.name, status="error",
+                    message=str(e), created_at=datetime.now(timezone.utc),
+                )
+                db.session.add(log_entry)
+                db.session.commit()
                 crawler.log(f"ERROR: {e}")
                 app.logger.error(f"Crawler {crawler.name} failed: {e}")
         ts = datetime.now().strftime("%H:%M:%S")
