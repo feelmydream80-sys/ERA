@@ -371,7 +371,7 @@ This paper presents a novel deep learning framework...
 ## Changelog
 | Date | Change | Reason |
 |------|--------|--------|
-| 2026-05-19 | 논문 카드에 **한글 요약 토글** 추가 (abstract_ko) + 상세 페이지에도 표시 | 사용자가 카드에서 바로 한글 요약을 펼쳐볼 수 있도록 개선 |
+| 2026-05-19 | 논문 카드 Hover 시 **한글 요약 오버레이** 표시 + 카드 크기 고정 | 사용자가 마우스만 올리면 한글 요약 확인, 버튼 클릭 방식에서 Hover 방식으로 변경 |
 | 2026-05-19 | 초기 시작 시 크롤링 제거 + `/favicon.ico` 라우트 추가 | cold start 502/504 timeout 방지, 404 해결 |
 | 2026-05-19 | 크롤러 중복 URL 버그 수정: `seen_urls` set + `db.session.rollback()` | 동일 URL이 여러 키워드에서 중복 수집되어 UNIQUE constraint 위반 |
 | 2026-05-19 | GitHub Webhook 자동 업데이트 추가 (`/webhook/update`) | git push만 하면 PythonAnywhere 자동 반영 |

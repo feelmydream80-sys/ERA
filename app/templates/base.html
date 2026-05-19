@@ -87,14 +87,6 @@
     }
     </script>
     <script>
-    function toggleAbstract(paperId) {
-        var el = document.getElementById('abstract-ko-' + paperId);
-        if (el) {
-            el.classList.toggle('d-none');
-        }
-    }
-    </script>
-    <script>
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/static/sw.js');
     }

@@ -27,8 +27,7 @@
             </div>
             {% endif %}
             {% if paper.abstract_ko %}
-            <div id="abstract-ko-{{ paper.id }}" class="abstract-ko d-none mt-2">
-                <hr class="my-2">
+            <div class="abstract-ko-overlay">
                 <p class="small mb-1 text-info fw-bold">📝 한글 요약</p>
                 <p class="card-text small">{{ paper.abstract_ko[:300] }}{% if paper.abstract_ko|length > 300 %}...{% endif %}</p>
             </div>
@@ -45,8 +44,6 @@
                 <button type="button" class="btn btn-sm btn-outline-warning" title="Share to KakaoTalk"
                     onclick='sharePaperViaKakao({{ paper.title|tojson }}, {{ paper.source_url|tojson }})'>Share</button>
                 {% if paper.abstract_ko %}
-                <button type="button" class="btn btn-sm btn-outline-info"
-                    onclick="toggleAbstract({{ paper.id }})">요약</button>
                 {% endif %}
             </div>
         </div>
