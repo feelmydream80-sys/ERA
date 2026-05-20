@@ -2,6 +2,9 @@
 
 | Date | Change | Reason |
 |------|--------|--------|
+| 2026-05-20 | KCI 크롤러 이름 분리: `KCI` → `KCI-Web`(kci.py) / `KCI-API`(kci_openapi.py) | 두 크롤러 데이터 구분 불가 문제 해결 |
+| 2026-05-20 | `kci.py`: `keywords=kw`(검색어) → `keywords=""`, 저자/발행일 파싱 추가, 5페이지까지 검색 | 데이터 오염 수정 + 수집량 확대 |
+| 2026-05-20 | `kci_openapi.py`: `키워드(영어)` → `키워드(영문)` 필드명 수정, source_url 개선 | 영문 키워드 추출 안 되던 버그 수정 |
 | 2026-05-19 | `pre-commit` hook 추가: commit 시 자동 크롤링 + `papers.db` stage | 사용자가 git commit만 하면 자동 수집 |
 | 2026-05-19 | `kci_openapi.py`: `open.kci.go.kr` → `api.odcloud.kr` (공공데이터포털 REST) | 잘못된 KCI 자체 API endpoint 수정, 실제 키로 동작 |
 | 2026-05-19 | CSS fade-in 애니메이션 추가 | 페이지 전환 시 부드러운 화면 전환 |

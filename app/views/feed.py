@@ -105,17 +105,21 @@ def webhook_update():
         abort(403)
 
     repo_path = "/home/feelmydream/daq"
-    result = subprocess.run(
-        ["git", "pull", "origin", "master"],
-        cwd=repo_path,
-        capture_output=True,
-        text=True,
+    fetch = subprocess.run(
+        ["git", "fetch", "origin"],
+        cwd=repo_path, capture_output=True, text=True,
     )
-    current_app.logger.info(f"Webhook git pull: {result.stdout.strip()}")
-
-    if result.returncode != 0:
-        current_app.logger.error(f"Webhook git pull failed: {result.stderr.strip()}")
-        return "Git pull failed", 500
+    if fetch.returncode != 0:
+        current_app.logger.error(f"Webhook git fetch failed: {fetch.stderr.strip()}")
+        return "Git fetch failed", 500
+    reset = subprocess.run(
+        ["git", "reset", "--hard", "origin/master"],
+        cwd=repo_path, capture_output=True, text=True,
+    )
+    current_app.logger.info(f"Webhook git reset: {reset.stdout.strip()}")
+    if reset.returncode != 0:
+        current_app.logger.error(f"Webhook git reset failed: {reset.stderr.strip()}")
+        return "Git reset failed", 500
 
     os.utime("/var/www/feelmydream_pythonanywhere_com_wsgi.py", None)
     current_app.logger.info("Webhook: WSGI file touched -> reload triggered")

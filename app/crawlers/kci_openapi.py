@@ -17,7 +17,7 @@ class KCIOpenAPICrawler(BaseCrawler):
     Pass decoded key as ?serviceKey query param.
     Scans recent pages and matches by title/keyword (no server-side search).
     """
-    name = "KCI"
+    name = "KCI-API"
 
     def get_service_key(self):
         try:
@@ -60,16 +60,24 @@ class KCIOpenAPICrawler(BaseCrawler):
                 for item in items:
                     title_en = norm(item.get("논문명(영어)") or "")
                     title_ko = norm(item.get("논문명(국문)") or "")
-                    kw_en = norm(item.get("키워드(영어)") or item.get("키워드(외국어)") or "")
+                    kw_en = norm(item.get("키워드(영문)") or item.get("키워드(외국어)") or "")
                     kw_ko = norm(item.get("키워드(국문)") or "")
                     combined = f"{title_en} {title_ko} {kw_en} {kw_ko}"
                     if not any(kw in combined for kw in norm_kws):
                         continue
-                    uid = hashlib.md5(combined.encode()).hexdigest()[:12]
+
+                    issn = item.get("국제표준연속간행물") or ""
+                    vol = item.get("권") or ""
+                    sp = item.get("시작페이지") or ""
+                    uid_input = f"{issn}|{vol}|{sp}|{title_ko}|{title_en}"
+                    uid = hashlib.md5(uid_input.encode()).hexdigest()[:12]
                     if uid in seen:
                         continue
                     seen.add(uid)
-                    authors = "; ".join(filter(None, [item.get("저자"), item.get("공동저자")]))
+
+                    authors_raw = item.get("저자") or ""
+                    authors = "; ".join(a for a in authors_raw.split(";") if a.strip())
+
                     pub_year = item.get("발행년")
                     pub_date = None
                     if pub_year:
@@ -77,14 +85,15 @@ class KCIOpenAPICrawler(BaseCrawler):
                             pub_date = datetime(int(pub_year), 1, 1).date()
                         except Exception:
                             pass
+
                     papers.append({
                         "title": item.get("논문명(국문)") or item.get("논문명(영어)") or "",
-                        "source_url": f"https://kci.go.kr/odcloud/{uid}",
+                        "source_url": f"https://www.kci.go.kr/odcloud/v1/{uid}",
                         "source": self.name,
                         "authors": authors.strip("; "),
                         "abstract": "",
                         "published_date": pub_date,
-                        "keywords": item.get("키워드(국문)") or item.get("키워드(영어)") or "",
+                        "keywords": (item.get("키워드(국문)") or "") + "; " + (item.get("키워드(영문)") or ""),
                     })
             except Exception as e:
                 self.log(f"error: {e}")

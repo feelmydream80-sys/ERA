@@ -12,6 +12,10 @@ body {
 .container {
     animation: fadeIn 0.25s ease-out;
 }
+#paper-list .col,
+.row.g-4.mb-4 .col {
+    min-width: 335px;
+}
 .paper-card {
     position: relative;
     overflow: hidden;

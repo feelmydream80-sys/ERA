@@ -1,9 +1,8 @@
 # Crawlers
 
 - 매시간 APScheduler 실행
-- **활성 소스**: arXiv, IEEE (REST API), OpenAlex, CrossRef (4개)
-- **비활성 소스**: KCI 공공데이터 Open API (ServiceKey 설정 시 활성화)
-- **제거된 소스**: KCI 웹스크래핑, DBpia (한국 IP 차단)
+- **활성 소스**: arXiv, IEEE, OpenAlex, CrossRef, KCI-Web (로컬), KCI-API (키 설정 시)
+- **제거된 소스**: DBpia (한국 IP 차단 + JS)
 - Settings 페이지에서 검색어 추가/활성화 가능
 - 기본 검색어 20개 (영어 10 + 한국어 10)
 
@@ -15,8 +14,8 @@
 | IEEE Xplore | ✅ Working | REST API (rest/search) | Any |
 | OpenAlex | ✅ Working | Free API (api.openalex.org) | Any |
 | Crossref | ✅ Working (no abstract) | Free API (api.crossref.org) | Any |
-| KCI (OpenAPI) | ✅ Working (with key, no keyword search) | 공공데이터 Open API (api.odcloud.kr) | Any |
-| KCI (Scraping) | ❌ Removed | Korean IP blocked | Korea only |
+| **KCI-Web** | ✅ Working | KCI 웹 검색 (`poArtiSearList.kci`) | Korea only |
+| **KCI-API** | ✅ Working (with key, no keyword search) | 공공데이터 Open API (`api.odcloud.kr`) | Any |
 | DBpia | ❌ Removed | Korean IP blocked + JS | Korea only |
 
 ## KCI Open API 등록 방법
