@@ -14,29 +14,31 @@
 C:\dev\daq\
 ├── run.py              # 실행 파일
 ├── config.py           # 설정 (DB, Kakao API, KCI)
+├── sync.ps1            # 크롤링 → 커밋 → 푸시 자동화
 ├── requirements.txt
 ├── AGENTS.md
 ├── app/
 │   ├── __init__.py     # Flask 앱 팩토리 + 기본 검색어 시드
-│   ├── models.py       # Paper, SearchKeyword 모델
+│   ├── models.py       # Paper, SearchKeyword, CrawlLog 모델
 │   ├── admin.py        # Flask-Admin (수동 논문 등록)
 │   ├── scheduler.py    # APScheduler (매시간 크롤링)
 │   ├── views/
 │   │   ├── feed.py     # 메인 피드, 상세보기, /health
 │   │   ├── search.py   # HTMX 검색/필터
 │   │   ├── kakao.py    # Kakao OAuth + 나에게 보내기
-│   │   └── settings.py # 검색어 관리
+│   │   ├── settings.py # 검색어 관리
+│   │   └── logs.py     # 크롤 로그 게시판 (/logs)
 │   ├── crawlers/
 │   │   ├── base.py        # 공통 (키워드 로드, 로깅)
 │   │   ├── arxiv.py       # arXiv API (공개)
 │   │   ├── ieee.py        # IEEE Xplore REST API
 │   │   ├── openalex.py    # OpenAlex API (오픈액세스)
 │   │   ├── crossref.py    # Crossref API (DOI 기반)
-│   │   ├── kci_openapi.py # KCI 공공데이터 Open API
-│   │   ├── kci.py         # (deprecated) KCI 웹 스크래핑
-│   │   └── kee.py         # (deprecated) DBpia 웹 스크래핑
+│   │   ├── kci.py         # KCI 웹 스크래핑 (한국 IP)
+│   │   ├── kci_openapi.py # KCI Open API (키 필요)
+│   │   └── kee.py         # (deprecated) DBpia
 │   ├── templates/
-│   │   ├── base.html, feed.html, detail.html
+│   │   ├── base.html, feed.html, logs.html
 │   │   ├── _paper_cards.html, settings.html
 │   │   └── admin_edit.html
 │   └── static/css/
@@ -173,7 +175,7 @@ os.environ['KAKAO_REST_API_KEY'] = '2331196ef286dc735ee7735b32a2e6bf'
 os.environ['KAKAO_CLIENT_SECRET'] = '9Yd4YywG7cabXMOpT2iISlANNKlYnA5D'
 os.environ['KAKAO_JAVASCRIPT_KEY'] = 'f95d003dc4f3c29be2866a308947b71d'
 os.environ['KAKAO_REDIRECT_URI'] = 'https://feelmydream.pythonanywhere.com/kakao/callback'
-os.environ['KCI_SERVICE_KEY'] = ''  # 공공데이터포털에서 발급받은 ServiceKey 입력
+os.environ['KCI_OPENAPI_KEY'] = ''  # KCI 웹사이트에서 발급받은 OpenAPI 키 (선택)
 os.environ['WEBHOOK_SECRET'] = 'power-papers-webhook-secret-2026'
 
 from app import create_app
@@ -233,56 +235,50 @@ Web 탭 상단 **Reload** 버튼 클릭
 
 ### 4. 소스 코드 업데이트 절차
 
-#### 4.1 로컬에서 수정 및 GitHub Push
+#### 4.1 로컬에서 동기화 (권장)
+
+`sync.ps1`을 실행하면 **크롤링 → papers.db 갱신 → 커밋 → 푸시**를 한 번에 처리합니다.
+
+```powershell
+cd C:\dev\daq
+.\sync.ps1
+```
+
+내부 동작:
+1. 모든 크롤러 실행 (arXiv, IEEE, OpenAlex, CrossRef, KCI)
+2. 신규 논문 수집 → `papers.db` 갱신
+3. `git add -A` (코드 + papers.db)
+4. `git commit -m "auto: sync papers.db (+N new papers)"`
+5. `git push origin master`
+
+커밋 메시지 커스텀:
+```powershell
+.\sync.ps1 -Message "IEEE REST API 안정화"
+```
+
+#### 4.2 수동 커밋/푸시
+
+크롤링 없이 코드만 올리려면 기존 방식 그대로:
 ```bash
-cd C:\dev\daq       # 로컬
+cd C:\dev\daq
 git add .
 git commit -m "변경 내용 설명"
 git push origin master
 ```
 
-#### 4.2 PythonAnywhere에 반영
+(이 경우 `papers.db`는 이전 sync 시점의 데이터가 올라갑니다.)
 
-**Bash 콘솔에서 Pull**
-```bash
-cd /home/feelmydream/daq
-git pull origin master
-```
+#### 4.3 PythonAnywhere 자동 반영
 
-**Web 탭 → Reload 버튼 클릭**
-
-#### 4.3 자동 업데이트 (Scheduled Tasks)
-
-Tasks 탭 → **Create scheduled task**:
-
-```
-Command:
-cd /home/feelmydream/daq && git pull origin master && touch /var/www/feelmydream_pythonanywhere_com_wsgi.py
-```
-
-※ `touch`로 WSGI 파일 타임스탬프를 갱신하면 PythonAnywhere가 자동 재시작합니다.
-
-#### 4.4 GitHub Webhook 자동 업데이트 (선택)
-
-Webhook을 설정하면 **로컬에서 `git push`만 하면 PythonAnywhere가 자동으로 업데이트 + Reload** 됩니다.
-
-**설정 방법 (1회):**
-
-GitHub 저장소 → Settings → Webhooks → Add webhook:
-- **Payload URL**: `https://feelmydream.pythonanywhere.com/webhook/update`
-- **Content type**: `application/json`
-- **Secret**: `power-papers-webhook-secret-2026`
-- **Events**: `push`만 선택
-- **Active**: 체크
+GitHub Webhook이 이미 설정되어 있어, `git push`만 하면 자동으로 적용됩니다.
 
 **동작 방식:**
-1. 로컬: `git push origin master`
-2. GitHub → PythonAnywhere `/webhook/update` POST 전송
-3. 앱이 sleep이면 깨어남 → `git pull` 실행 → WSGI touch → 자동 Reload
+1. 로컬: `.\sync.ps1` (또는 `git push origin master`)
+2. GitHub가 PythonAnywhere의 `/webhook/update`로 POST 전송
+3. PA에서 `git pull origin master` 실행 + WSGI touch → 자동 Reload
+4. `papers.db`도 함께 pull 되어 KCI 논문 포함 모든 데이터 적용
 
-**문제 발생 시:** Flask 로그(Error log)에서 `Webhook:` 메시지 확인
-
-#### 4.5 패키지 변경 시
+#### 4.4 패키지 변경 시
 ```bash
 cd /home/feelmydream/daq
 source venv/bin/activate
@@ -324,7 +320,7 @@ PythonAnywhere 무료 티어는 항상 켜져 있지 않아 매시간 크롤링�
 | `KAKAO_JAVASCRIPT_KEY` | `f95d003dc4f3c29be2866a308947b71d` | WSGI 파일 또는 환경변수 |
 | `SECRET_KEY` | `power-papers-prod-secret-key-2026` | WSGI 파일 또는 환경변수 (운영 시 변경 권장) |
 | `WEBHOOK_SECRET` | `power-papers-webhook-secret-2026` | WSGI 파일 또는 환경변수 (GitHub Webhook 시크릿) |
-| `KCI_SERVICE_KEY` | (data.go.kr 발급) | WSGI 파일 또는 환경변수 (없으면 KCI 수집 스킵) |
+| `KCI_OPENAPI_KEY` | (KCI 웹사이트 발급) | WSGI 파일 또는 환경변수 (없으면 OpenAPI 수집 스킵) |
 
 ---
 
@@ -355,16 +351,16 @@ PythonAnywhere 무료 티어는 항상 켜져 있지 않아 매시간 크롤링�
 | IEEE Xplore | ✅ Working | REST API (rest/search) | Any |
 | OpenAlex | ✅ Working | Free API (api.openalex.org) | Any |
 | Crossref | ✅ Working (no abstract) | Free API (api.crossref.org) | Any |
-| KCI (OpenAPI) | ⏸️ Waiting for ServiceKey | 공공데이터 Open API | Any (data.go.kr infra) |
+| KCI (OpenAPI) | ⏸️ Waiting for ServiceKey | KCI Open API (open.kci.go.kr) | Any (KCI infra) |
 | KCI (Scraping) | ❌ Removed | Korean IP blocked | Korea only |
 | DBpia | ❌ Removed | Korean IP blocked + JS | Korea only |
 
 ### KCI Open API 등록 방법
-1. https://www.data.go.kr/data/3049042/openapi.do 접속
-2. 로그인 → "활용신청" 버튼 클릭
-3. 승인 유형: 자동승인 (개발단계)
-4. 발급받은 ServiceKey를 환경변수 `KCI_SERVICE_KEY`에 설정
-5. PythonAnywhere: Web 탭 → WSGI 파일에 `os.environ['KCI_SERVICE_KEY'] = '...'` 추가
+1. https://www.kci.go.kr 접속 (로그인 필요)
+2. 상단 메뉴 **KCI 소개** → 하단 **KCI Open API** → **인증키 신청/관리**
+3. 또는 바로가기: https://www.kci.go.kr/kciportal/po/openapi/openApiKeyRequest.kci
+4. 인증키 신청 → 발급받은 키를 환경변수 `KCI_OPENAPI_KEY`에 설정
+5. PythonAnywhere: Web 탭 → WSGI 파일에 `os.environ['KCI_OPENAPI_KEY'] = '...'` 추가
 
 ## KakaoTalk Setup
 1. https://developers.kakao.com 에서 앱 생성
@@ -396,6 +392,12 @@ This paper presents a novel deep learning framework...
 
 ## Changelog
 | Date | Change | Reason |
+|------|--------|--------|
+| 2026-05-19 | sync.ps1 추가: 크롤링+커밋+푸시 자동화, papers.db Git 추적, AGENTS.md 업데이트 | 로컬 수집 DB를 push하여 PA에 KCI 논문도 반영 |
+| 2026-05-19 | KCI 공공데이터 Open API → KCI 웹사이트 Open API로 전환 (`open.kci.go.kr`) | 잘못된 data.go.kr endpoint 수정 |
+| 2026-05-19 | CSS fade-in 애니메이션 추가 | 페이지 전환 시 부드러운 화면 전환 |
+| 2026-05-19 | `scheduler.py`: per-source 로그 + CrawpLog DB 모델 + `/logs` 게시판 + 수동 실행 버튼 | 크롤러 동작 상태 확인 가능 |
+| 2026-05-19 | KCI 웹크롤러 `poTotalSearList.kci` → `poArtiSearList.kci` | KCI 논문 검색 정상화 |
 |------|--------|--------|
 | 2026-05-19 | 논문 카드 Hover 시 **한글 요약 오버레이** 표시 + 카드 크기 고정 | 사용자가 마우스만 올리면 한글 요약 확인, 버튼 클릭 방식에서 Hover 방식으로 변경 |
 | 2026-05-19 | 초기 시작 시 크롤링 제거 + `/favicon.ico` 라우트 추가 | cold start 502/504 timeout 방지, 404 해결 |

@@ -2,6 +2,8 @@ venv/
 *.pyc
 __pycache__/
 *.db
+!papers.db
+*.db-journal
 .env
 .vscode/
 .idea/

@@ -119,6 +119,7 @@ def run_all_crawlers(app):
         print(f"  [{ts}] === Crawler Run Finished: {total_new} new papers (DB total: {total_db}, dups: {title_dup_count}) ===")
         print(f"  [{ts}] {summary}")
         app.logger.info(f"Crawler run finished: {total_new} new, DB={total_db}, dups={title_dup_count} | {summary}")
+    return total_new
 
 
 def init_scheduler(app):
