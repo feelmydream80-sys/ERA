@@ -41,12 +41,15 @@ class ArxivCrawler(BaseCrawler):
                             pub_date = dt.date()
                         except Exception:
                             pass
+                    title_text = (title.text.strip().replace("\n", " ").replace("  ", " ").replace("  ", " ") if title is not None else "")
+                    if kw.lower() not in title_text.lower():
+                        continue
                     papers.append({
-                        "title": title.text.strip().replace("\n", " ").replace("  ", " ") if title is not None else "",
+                        "title": title_text,
                         "source_url": link.text.strip() if link is not None else "",
                         "source": self.name,
                         "authors": authors,
-                        "abstract": summary.text.strip().replace("\n", " ").replace("  ", " ") if summary is not None else "",
+                        "abstract": summary.text.strip().replace("\n", " ").replace("  ", " ").replace("  ", " ") if summary is not None else "",
                         "published_date": pub_date,
                         "keywords": kw,
                     })

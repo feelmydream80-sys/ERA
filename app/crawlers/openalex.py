@@ -34,6 +34,8 @@ class OpenAlexCrawler(BaseCrawler):
                     title = (r.get("title") or "").strip()
                     if not title:
                         continue
+                    if kw.lower() not in title.lower():
+                        continue
                     pub_date = None
                     pd_str = r.get("publication_date", "") or ""
                     if pd_str:

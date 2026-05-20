@@ -37,6 +37,8 @@ class CrossrefCrawler(BaseCrawler):
                     if not titles:
                         continue
                     title = titles[0].strip()
+                    if kw.lower() not in title.lower():
+                        continue
                     pub_date = None
                     issued = item.get("issued") or {}
                     dp = (issued.get("date-parts") or [None])[0]
