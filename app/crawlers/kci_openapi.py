@@ -1,93 +1,103 @@
 import requests
+import hashlib
 import xml.etree.ElementTree as ET
+from urllib.parse import quote
 from datetime import datetime
 from .base import BaseCrawler
-from flask import current_app
 
 
 class KCIOpenAPICrawler(BaseCrawler):
     """
-    KCI Open API (via 공공데이터포털 data.go.kr)
-    Requires KCI_SERVICE_KEY env var or config value.
+    KCI Open API (https://open.kci.go.kr)
+    Requires a KCI Open API key issued from:
+      https://www.kci.go.kr/kciportal/po/openapi/openApiKeyRequest.kci
 
-    API docs: https://www.data.go.kr/data/3049042/openapi.do
-    Endpoint: http://apis.data.go.kr/B552540/KCIOpenApi/artiInfo/openApiD217List
+    Endpoint:
+      GET https://open.kci.go.kr/po/openapi/openApiSearch.kci
+        ?apiCode=articleSearch
+        &key=YOUR_KEY
+        &keyword=SEARCH_TERM
+        &displayCount=100
+
+    This is DIFFERENT from the 공공데이터포털 key (data 15083283).
+    KCI Open API key must be obtained separately from KCI website (login required).
     """
     name = "KCI"
 
-    def get_service_key(self):
+    def get_api_key(self):
         try:
-            return current_app.config.get("KCI_SERVICE_KEY", "")
-        except RuntimeError:
+            from flask import current_app
+            return current_app.config.get("KCI_OPENAPI_KEY", "")
+        except (RuntimeError, ImportError):
             import os
-            return os.environ.get("KCI_SERVICE_KEY", "")
+            return os.environ.get("KCI_OPENAPI_KEY", "")
 
     def crawl(self):
-        service_key = self.get_service_key()
-        if not service_key:
-            self.log("SKIP: KCI_SERVICE_KEY not configured (register at data.go.kr)")
+        api_key = self.get_api_key()
+        if not api_key:
+            self.log("SKIP: KCI_OPENAPI_KEY not configured")
+            self.log("Get a key: https://www.kci.go.kr/kciportal/po/openapi/openApiKeyRequest.kci")
             return []
 
-        papers = []
         keywords_en = self.get_keywords(language="en")
         keywords_ko = self.get_keywords(language="ko")
         all_keywords = list(set(keywords_en + keywords_ko))
 
+        papers = []
+        seen_urls = set()
+        url = "https://open.kci.go.kr/po/openapi/openApiSearch.kci"
+
         for kw in all_keywords:
             self.log(f'searching "{kw}"...')
             try:
-                resp = requests.get(
-                    "http://apis.data.go.kr/B552540/KCIOpenApi/artiInfo/openApiD217List",
-                    params={
-                        "ServiceKey": service_key,
-                        "recordCnt": 10,
-                        "pageNo": 1,
-                        "searchWord": kw,
-                        "sort": "RANK",
-                    },
-                    timeout=15,
-                )
+                resp = requests.get(url, params={
+                    "apiCode": "articleSearch",
+                    "key": api_key,
+                    "keyword": kw,
+                    "displayCount": 100,
+                    "sortNm": "정확도",
+                }, timeout=30)
                 if resp.status_code != 200:
                     self.log(f"HTTP {resp.status_code}")
                     continue
-                root = ET.fromstring(resp.text.encode("utf-8"))
-                ns = {"ns": "http://apis.data.go.kr/B552540/KCIOpenApi/artiInfo/openApiD217List"}
-                for item in root.iter("item"):
-                    title_el = item.find("artiTitle")
-                    title = (title_el.text or "").strip() if title_el is not None else ""
+                root = ET.fromstring(resp.content)
+                for record in root.iter("record"):
+                    title = record.findtext("title", "").strip()
                     if not title:
                         continue
-                    authors_el = item.find("artiAuthorNm")
-                    authors = (authors_el.text or "").strip() if authors_el is not None else ""
-                    abstract_el = item.find("artiAbstract")
-                    abstract = (abstract_el.text or "").strip() if abstract_el is not None else ""
-                    doi_el = item.find("artiDOI")
-                    doi = (doi_el.text or "").strip() if doi_el is not None else ""
-                    url_el = item.find("artiUrl")
-                    url = (url_el.text or "").strip() if url_el is not None else ""
-                    pub_year_el = item.find("pubYear")
-                    pub_year = (pub_year_el.text or "").strip() if pub_year_el is not None else ""
+                    doi = record.findtext("doi", "") or ""
+                    paper_url = record.findtext("url", "") or ""
+                    source_url = paper_url or (f"https://doi.org/{doi}" if doi else "")
+                    if source_url and source_url in seen_urls:
+                        continue
+                    if source_url:
+                        seen_urls.add(source_url)
+                    if not source_url:
+                        uid = hashlib.md5(title.encode()).hexdigest()[:12]
+                        source_url = f"https://kci.go.kr/openapi/{uid}"
+                    authors = record.findtext("author", "") or ""
+                    abstract = record.findtext("abstract", "") or ""
+                    journal = record.findtext("journal", "") or ""
+                    pub_year = record.findtext("pubYr", "") or ""
                     pub_date = None
-                    if pub_year:
+                    if pub_year and len(pub_year) >= 4:
                         try:
-                            pub_date = datetime(int(pub_year), 1, 1).date()
+                            pub_date = datetime(int(pub_year[:4]), 1, 1).date()
                         except Exception:
                             pass
-                    jnl_el = item.find("jnlTitle")
-                    journal = (jnl_el.text or "").strip() if jnl_el is not None else ""
                     papers.append({
                         "title": title,
-                        "source_url": url or (f"https://doi.org/{doi}" if doi else ""),
+                        "source_url": source_url,
                         "source": self.name,
                         "authors": authors,
                         "abstract": abstract,
-                        "doi": doi,
                         "published_date": pub_date,
                         "keywords": kw,
                         "venue": journal,
                     })
             except ET.ParseError as e:
-                self.log(f"XML parse error for '{kw}': {e}")
+                self.log(f"XML parse error: {e}")
             except Exception as e:
                 self.log(f"error: {e}")
+        self.log(f"done: {len(papers)} total")
         return papers
