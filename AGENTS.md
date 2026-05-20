@@ -53,6 +53,30 @@ cd C:\dev\daq
 # Admin: http://localhost:5000/admin/
 ```
 
+## Pre-commit Hook (자동 크롤링)
+
+커밋할 때마다 자동으로 크롤러가 실행되어 신규 논문을 수집하고 `papers.db`를 갱신합니다.
+
+### 1회 설정
+```powershell
+cd C:\dev\daq
+git config core.hooksPath .githooks
+```
+
+설정 후에는 `git commit` 실행 시 다음 순서로 동작:
+1. 모든 크롤러 실행 (arXiv, IEEE, OpenAlex, CrossRef, KCI 웹, KCI OpenAPI)
+2. 신규 논문 → `papers.db` 저장
+3. 변경된 `papers.db` 자동 stage
+4. commit 정상 진행
+
+### `.git/hooks`에 직접 복사
+`.githooks/` 디렉토리를 사용할 수 없는 환경에서는:
+```bash
+cp .githooks/pre-commit .git/hooks/pre-commit
+```
+
+---
+
 ## Deployment — PythonAnywhere
 
 운영 URL: `https://feelmydream.pythonanywhere.com`
@@ -175,7 +199,7 @@ os.environ['KAKAO_REST_API_KEY'] = '2331196ef286dc735ee7735b32a2e6bf'
 os.environ['KAKAO_CLIENT_SECRET'] = '9Yd4YywG7cabXMOpT2iISlANNKlYnA5D'
 os.environ['KAKAO_JAVASCRIPT_KEY'] = 'f95d003dc4f3c29be2866a308947b71d'
 os.environ['KAKAO_REDIRECT_URI'] = 'https://feelmydream.pythonanywhere.com/kakao/callback'
-os.environ['KCI_OPENAPI_KEY'] = ''  # KCI 웹사이트에서 발급받은 OpenAPI 키 (선택)
+os.environ['KCI_SERVICE_KEY'] = ''  # 공공데이터포털(data.go.kr)에서 발급받은 ServiceKey (선택)
 os.environ['WEBHOOK_SECRET'] = 'power-papers-webhook-secret-2026'
 
 from app import create_app
@@ -235,45 +259,34 @@ Web 탭 상단 **Reload** 버튼 클릭
 
 ### 4. 소스 코드 업데이트 절차
 
-#### 4.1 로컬에서 동기화 (권장)
+#### 4.1 기본 워크플로우
 
-`sync.ps1`을 실행하면 **크롤링 → papers.db 갱신 → 커밋 → 푸시**를 한 번에 처리합니다.
+`git commit` 실행 시 `pre-commit` hook이 자동으로 크롤러를 실행하고 `papers.db`를 갱신합니다.
 
 ```powershell
 cd C:\dev\daq
-.\sync.ps1
-```
-
-내부 동작:
-1. 모든 크롤러 실행 (arXiv, IEEE, OpenAlex, CrossRef, KCI)
-2. 신규 논문 수집 → `papers.db` 갱신
-3. `git add -A` (코드 + papers.db)
-4. `git commit -m "auto: sync papers.db (+N new papers)"`
-5. `git push origin master`
-
-커밋 메시지 커스텀:
-```powershell
-.\sync.ps1 -Message "IEEE REST API 안정화"
-```
-
-#### 4.2 수동 커밋/푸시
-
-크롤링 없이 코드만 올리려면 기존 방식 그대로:
-```bash
-cd C:\dev\daq
-git add .
-git commit -m "변경 내용 설명"
+git commit -m "변경 내용"
 git push origin master
 ```
 
-(이 경우 `papers.db`는 이전 sync 시점의 데이터가 올라갑니다.)
+#### 4.2 크롤링 없이 코드만 커밋
+
+크롤링 없이 코드만 올리려면 `--no-verify` 옵션 사용:
+```bash
+cd C:\dev\daq
+git add .
+git commit --no-verify -m "변경 내용 설명"
+git push origin master
+```
+
+(이 경우 `papers.db`는 이전 commit 시점의 데이터가 올라갑니다.)
 
 #### 4.3 PythonAnywhere 자동 반영
 
 GitHub Webhook이 이미 설정되어 있어, `git push`만 하면 자동으로 적용됩니다.
 
 **동작 방식:**
-1. 로컬: `.\sync.ps1` (또는 `git push origin master`)
+1. 로컬: `.\sync.ps1` (또는 `git commit && git push origin master`)
 2. GitHub가 PythonAnywhere의 `/webhook/update`로 POST 전송
 3. PA에서 `git pull origin master` 실행 + WSGI touch → 자동 Reload
 4. `papers.db`도 함께 pull 되어 KCI 논문 포함 모든 데이터 적용
@@ -320,7 +333,7 @@ PythonAnywhere 무료 티어는 항상 켜져 있지 않아 매시간 크롤링�
 | `KAKAO_JAVASCRIPT_KEY` | `f95d003dc4f3c29be2866a308947b71d` | WSGI 파일 또는 환경변수 |
 | `SECRET_KEY` | `power-papers-prod-secret-key-2026` | WSGI 파일 또는 환경변수 (운영 시 변경 권장) |
 | `WEBHOOK_SECRET` | `power-papers-webhook-secret-2026` | WSGI 파일 또는 환경변수 (GitHub Webhook 시크릿) |
-| `KCI_OPENAPI_KEY` | (KCI 웹사이트 발급) | WSGI 파일 또는 환경변수 (없으면 OpenAPI 수집 스킵) |
+| `KCI_SERVICE_KEY` | (data.go.kr 발급) | WSGI 파일 또는 환경변수 (없으면 KCI OpenAPI 수집 스킵) |
 
 ---
 
@@ -351,16 +364,15 @@ PythonAnywhere 무료 티어는 항상 켜져 있지 않아 매시간 크롤링�
 | IEEE Xplore | ✅ Working | REST API (rest/search) | Any |
 | OpenAlex | ✅ Working | Free API (api.openalex.org) | Any |
 | Crossref | ✅ Working (no abstract) | Free API (api.crossref.org) | Any |
-| KCI (OpenAPI) | ⏸️ Waiting for ServiceKey | KCI Open API (open.kci.go.kr) | Any (KCI infra) |
+| KCI (OpenAPI) | ✅ Working (with key, no keyword search) | 공공데이터 Open API (api.odcloud.kr) | Any |
 | KCI (Scraping) | ❌ Removed | Korean IP blocked | Korea only |
 | DBpia | ❌ Removed | Korean IP blocked + JS | Korea only |
 
 ### KCI Open API 등록 방법
-1. https://www.kci.go.kr 접속 (로그인 필요)
-2. 상단 메뉴 **KCI 소개** → 하단 **KCI Open API** → **인증키 신청/관리**
-3. 또는 바로가기: https://www.kci.go.kr/kciportal/po/openapi/openApiKeyRequest.kci
-4. 인증키 신청 → 발급받은 키를 환경변수 `KCI_OPENAPI_KEY`에 설정
-5. PythonAnywhere: Web 탭 → WSGI 파일에 `os.environ['KCI_OPENAPI_KEY'] = '...'` 추가
+1. https://www.data.go.kr/data/15083283/openapi.do 접속
+2. 로그인 → "활용신청" → 승인유형 **REST** 선택
+3. 발급받은 ServiceKey를 환경변수 `KCI_SERVICE_KEY`에 설정
+4. PythonAnywhere: Web 탭 → WSGI 파일에 `os.environ['KCI_SERVICE_KEY'] = '...'` 추가
 
 ## KakaoTalk Setup
 1. https://developers.kakao.com 에서 앱 생성
@@ -395,6 +407,9 @@ This paper presents a novel deep learning framework...
 |------|--------|--------|
 | 2026-05-19 | sync.ps1 추가: 크롤링+커밋+푸시 자동화, papers.db Git 추적, AGENTS.md 업데이트 | 로컬 수집 DB를 push하여 PA에 KCI 논문도 반영 |
 | 2026-05-19 | KCI 공공데이터 Open API → KCI 웹사이트 Open API로 전환 (`open.kci.go.kr`) | 잘못된 data.go.kr endpoint 수정 |
+| 2026-05-19 | `sync.ps1` 추가: 크롤링+커밋+푸시 자동화, `papers.db` Git 추적 | 로컬 수집 DB를 push하여 PA에 KCI 논문도 반영 |
+| 2026-05-19 | `pre-commit` hook 추가: commit 시 자동 크롤링 + `papers.db` stage | 사용자가 git commit만 하면 자동 수집 |
+| 2026-05-19 | `kci_openapi.py`: `open.kci.go.kr` → `api.odcloud.kr` (공공데이터포털 REST) | 잘못된 KCI 자체 API endpoint 수정, 실제 키로 동작 |
 | 2026-05-19 | CSS fade-in 애니메이션 추가 | 페이지 전환 시 부드러운 화면 전환 |
 | 2026-05-19 | `scheduler.py`: per-source 로그 + CrawpLog DB 모델 + `/logs` 게시판 + 수동 실행 버튼 | 크롤러 동작 상태 확인 가능 |
 | 2026-05-19 | KCI 웹크롤러 `poTotalSearList.kci` → `poArtiSearList.kci` | KCI 논문 검색 정상화 |

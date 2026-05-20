@@ -1,0 +1,25 @@
+#!/bin/sh
+# pre-commit hook: run all crawlers before commit, auto-stage papers.db
+
+set -e
+
+echo ""
+echo "=== [pre-commit] Running crawlers to collect new papers... ==="
+
+cd "$(git rev-parse --show-toplevel)"
+
+"./venv/Scripts/python" -c "
+import sys
+sys.path.insert(0, '.')
+from app import create_app
+from app.scheduler import run_all_crawlers
+app = create_app()
+count = run_all_crawlers(app)
+print(f'[pre-commit] Crawler complete: {count} new papers')
+"
+
+# Stage papers.db if it changed
+git add papers.db
+
+echo "=== [pre-commit] Done ==="
+echo ""

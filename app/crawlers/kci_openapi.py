@@ -1,103 +1,93 @@
 import requests
+import re
 import hashlib
-import xml.etree.ElementTree as ET
-from urllib.parse import quote
 from datetime import datetime
 from .base import BaseCrawler
 
 
+def norm(t):
+    return re.sub(r"[^a-z0-9\uac00-\ud7a3\s]", "", t.lower().strip())
+
+
 class KCIOpenAPICrawler(BaseCrawler):
     """
-    KCI Open API (https://open.kci.go.kr)
-    Requires a KCI Open API key issued from:
-      https://www.kci.go.kr/kciportal/po/openapi/openApiKeyRequest.kci
-
-    Endpoint:
-      GET https://open.kci.go.kr/po/openapi/openApiSearch.kci
-        ?apiCode=articleSearch
-        &key=YOUR_KEY
-        &keyword=SEARCH_TERM
-        &displayCount=100
-
-    This is DIFFERENT from the 공공데이터포털 key (data 15083283).
-    KCI Open API key must be obtained separately from KCI website (login required).
+    KCI 논문정보 via 공공데이터포털 (data 15083283)
+    Endpoint: api.odcloud.kr/api/15083283/v1/uddi:fb7f923a-a93b-4ae8-8df2-cbf6e70edf49
+    Key from: https://www.data.go.kr/data/15083283/openapi.do
+    Pass decoded key as ?serviceKey query param.
+    Scans recent pages and matches by title/keyword (no server-side search).
     """
     name = "KCI"
 
-    def get_api_key(self):
+    def get_service_key(self):
         try:
             from flask import current_app
-            return current_app.config.get("KCI_OPENAPI_KEY", "")
+            return current_app.config.get("KCI_SERVICE_KEY", "")
         except (RuntimeError, ImportError):
             import os
-            return os.environ.get("KCI_OPENAPI_KEY", "")
+            return os.environ.get("KCI_SERVICE_KEY", "")
 
     def crawl(self):
-        api_key = self.get_api_key()
-        if not api_key:
-            self.log("SKIP: KCI_OPENAPI_KEY not configured")
-            self.log("Get a key: https://www.kci.go.kr/kciportal/po/openapi/openApiKeyRequest.kci")
+        service_key = self.get_service_key()
+        if not service_key:
+            self.log("SKIP: KCI_SERVICE_KEY not configured")
             return []
 
         keywords_en = self.get_keywords(language="en")
         keywords_ko = self.get_keywords(language="ko")
-        all_keywords = list(set(keywords_en + keywords_ko))
+        norm_kws = [norm(kw) for kw in set(keywords_en + keywords_ko) if kw.strip()]
+        if not norm_kws:
+            return []
 
+        url = "https://api.odcloud.kr/api/15083283/v1/uddi:fb7f923a-a93b-4ae8-8df2-cbf6e70edf49"
         papers = []
-        seen_urls = set()
-        url = "https://open.kci.go.kr/po/openapi/openApiSearch.kci"
+        seen = set()
+        pages = 50
 
-        for kw in all_keywords:
-            self.log(f'searching "{kw}"...')
+        for page in range(1, pages + 1):
+            self.log(f"page {page}/{pages}...")
             try:
                 resp = requests.get(url, params={
-                    "apiCode": "articleSearch",
-                    "key": api_key,
-                    "keyword": kw,
-                    "displayCount": 100,
-                    "sortNm": "정확도",
+                    "page": page, "perPage": 100,
+                    "returnType": "JSON", "serviceKey": service_key,
                 }, timeout=30)
                 if resp.status_code != 200:
                     self.log(f"HTTP {resp.status_code}")
-                    continue
-                root = ET.fromstring(resp.content)
-                for record in root.iter("record"):
-                    title = record.findtext("title", "").strip()
-                    if not title:
+                    break
+                items = resp.json().get("data", [])
+                if not items:
+                    break
+                for item in items:
+                    title_en = norm(item.get("논문명(영어)") or "")
+                    title_ko = norm(item.get("논문명(국문)") or "")
+                    kw_en = norm(item.get("키워드(영어)") or item.get("키워드(외국어)") or "")
+                    kw_ko = norm(item.get("키워드(국문)") or "")
+                    combined = f"{title_en} {title_ko} {kw_en} {kw_ko}"
+                    if not any(kw in combined for kw in norm_kws):
                         continue
-                    doi = record.findtext("doi", "") or ""
-                    paper_url = record.findtext("url", "") or ""
-                    source_url = paper_url or (f"https://doi.org/{doi}" if doi else "")
-                    if source_url and source_url in seen_urls:
+                    uid = hashlib.md5(combined.encode()).hexdigest()[:12]
+                    if uid in seen:
                         continue
-                    if source_url:
-                        seen_urls.add(source_url)
-                    if not source_url:
-                        uid = hashlib.md5(title.encode()).hexdigest()[:12]
-                        source_url = f"https://kci.go.kr/openapi/{uid}"
-                    authors = record.findtext("author", "") or ""
-                    abstract = record.findtext("abstract", "") or ""
-                    journal = record.findtext("journal", "") or ""
-                    pub_year = record.findtext("pubYr", "") or ""
+                    seen.add(uid)
+                    authors = "; ".join(filter(None, [item.get("저자"), item.get("공동저자")]))
+                    pub_year = item.get("발행년")
                     pub_date = None
-                    if pub_year and len(pub_year) >= 4:
+                    if pub_year:
                         try:
-                            pub_date = datetime(int(pub_year[:4]), 1, 1).date()
+                            pub_date = datetime(int(pub_year), 1, 1).date()
                         except Exception:
                             pass
                     papers.append({
-                        "title": title,
-                        "source_url": source_url,
+                        "title": item.get("논문명(국문)") or item.get("논문명(영어)") or "",
+                        "source_url": f"https://kci.go.kr/odcloud/{uid}",
                         "source": self.name,
-                        "authors": authors,
-                        "abstract": abstract,
+                        "authors": authors.strip("; "),
+                        "abstract": "",
                         "published_date": pub_date,
-                        "keywords": kw,
-                        "venue": journal,
+                        "keywords": item.get("키워드(국문)") or item.get("키워드(영어)") or "",
                     })
-            except ET.ParseError as e:
-                self.log(f"XML parse error: {e}")
             except Exception as e:
                 self.log(f"error: {e}")
-        self.log(f"done: {len(papers)} total")
+                break
+        self.log(f"done: {len(papers)} matched from {pages} pages")
         return papers
