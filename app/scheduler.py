@@ -37,7 +37,7 @@ def translate_abstract(text):
 
 
 def run_all_crawlers(app):
-    crawlers = [ArxivCrawler(), IEEECrawler(), OpenAlexCrawler(), CrossrefCrawler(), KCICrawler()]
+    crawlers = [ArxivCrawler(), IEEECrawler(), OpenAlexCrawler(), CrossrefCrawler(), KCICrawler(), KCIOpenAPICrawler()]
     ts = datetime.now().strftime("%H:%M:%S")
     print(f"\n[{ts}] === Crawler Run Started ===")
     total_new = 0
