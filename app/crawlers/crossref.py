@@ -37,7 +37,8 @@ class CrossrefCrawler(BaseCrawler):
                     if not titles:
                         continue
                     title = titles[0].strip()
-                    if kw.lower() not in title.lower():
+                    abstract = item.get("abstract", "") or ""
+                    if kw.lower() not in title.lower() and kw.lower() not in abstract.lower():
                         continue
                     pub_date = None
                     issued = item.get("issued") or {}
@@ -57,7 +58,6 @@ class CrossrefCrawler(BaseCrawler):
                         " ".join(filter(None, [a.get("given", ""), a.get("family", "")]))
                         for a in (item.get("author") or [])
                     )
-                    abstract = item.get("abstract", "") or ""
                     doi = item.get("DOI", "") or ""
                     url = item.get("URL", "") or ""
                     if not url and doi:

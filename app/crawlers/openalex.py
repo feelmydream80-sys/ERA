@@ -34,8 +34,6 @@ class OpenAlexCrawler(BaseCrawler):
                     title = (r.get("title") or "").strip()
                     if not title:
                         continue
-                    if kw.lower() not in title.lower():
-                        continue
                     pub_date = None
                     pd_str = r.get("publication_date", "") or ""
                     if pd_str:
@@ -57,6 +55,9 @@ class OpenAlexCrawler(BaseCrawler):
                                 wp.append((pos, word))
                         wp.sort()
                         abstract = " ".join(w for _, w in wp)
+                    kw_lower = kw.lower()
+                    if kw_lower not in title.lower() and kw_lower not in abstract.lower():
+                        continue
                     loc = r.get("primary_location") or {}
                     src = loc.get("source") or {}
                     venue = src.get("display_name", "") if src else ""

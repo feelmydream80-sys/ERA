@@ -37,12 +37,13 @@ class IEEECrawler(BaseCrawler):
                     title = rec.get("articleTitle") or rec.get("title", "")
                     if not title:
                         continue
-                    if kw.lower() not in title.lower():
+                    abstract = rec.get("abstract", "") or ""
+                    kw_lower = kw.lower()
+                    if kw_lower not in title.lower() and kw_lower not in abstract.lower():
                         continue
                     href = rec.get("publicationLink") or rec.get("documentLink", "")
                     if href and not href.startswith("http"):
                         href = "https://ieeexplore.ieee.org" + href
-                    abstract = rec.get("abstract", "") or ""
                     doi = rec.get("doi", "") or ""
                     authors = "; ".join(
                         a.get("fullName", a.get("preferredName", ""))
