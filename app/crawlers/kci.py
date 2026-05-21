@@ -54,8 +54,6 @@ class KCICrawler(BaseCrawler):
                         title_text = title_el.get_text(strip=True)
                         if not title_text:
                             continue
-                        if kw.lower() not in title_text.lower():
-                            continue
                         href = title_el.get("href", "")
                         if href and not href.startswith("http"):
                             href = "https://www.kci.go.kr" + href

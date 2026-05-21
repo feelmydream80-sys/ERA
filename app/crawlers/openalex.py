@@ -55,9 +55,6 @@ class OpenAlexCrawler(BaseCrawler):
                                 wp.append((pos, word))
                         wp.sort()
                         abstract = " ".join(w for _, w in wp)
-                    kw_lower = kw.lower()
-                    if kw_lower not in title.lower() and kw_lower not in abstract.lower():
-                        continue
                     loc = r.get("primary_location") or {}
                     src = loc.get("source") or {}
                     venue = src.get("display_name", "") if src else ""

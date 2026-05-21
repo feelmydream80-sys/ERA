@@ -2,7 +2,7 @@
 from apscheduler.triggers.interval import IntervalTrigger
 from deep_translator import GoogleTranslator
 from app import db
-from app.models import Paper, CrawlLog
+from app.models import Paper, CrawlLog, SearchKeyword
 from app.crawlers.ieee import IEEECrawler
 from app.crawlers.arxiv import ArxivCrawler
 from app.crawlers.openalex import OpenAlexCrawler
@@ -119,7 +119,27 @@ def run_all_crawlers(app):
         print(f"  [{ts}] === Crawler Run Finished: {total_new} new papers (DB total: {total_db}, dups: {title_dup_count}) ===")
         print(f"  [{ts}] {summary}")
         app.logger.info(f"Crawler run finished: {total_new} new, DB={total_db}, dups={title_dup_count} | {summary}")
+        filtered = filter_papers_by_keywords()
+        print(f"  [{datetime.now().strftime('%H:%M:%S')}] Post-filter: {filtered} papers removed")
+        app.logger.info(f"Post-filter: {filtered} papers removed")
     return total_new
+
+
+def filter_papers_by_keywords():
+    kws = SearchKeyword.query.filter_by(enabled=True).all()
+    if not kws:
+        return 0
+    keyword_texts = [kw.keyword.lower().strip() for kw in kws]
+    papers = Paper.query.filter(Paper.source == "KCI-Web").all()
+    removed = 0
+    for paper in papers:
+        title = (paper.title or "").lower()
+        abstract = (paper.abstract or "").lower()
+        if not any(kw in title or kw in abstract for kw in keyword_texts):
+            db.session.delete(paper)
+            removed += 1
+    db.session.commit()
+    return removed
 
 
 def init_scheduler(app):

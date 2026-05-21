@@ -42,16 +42,12 @@ class ArxivCrawler(BaseCrawler):
                         except Exception:
                             pass
                     title_text = (title.text.strip().replace("\n", " ").replace("  ", " ").replace("  ", " ") if title is not None else "")
-                    abstract_text = (summary.text.strip().replace("\n", " ").replace("  ", " ").replace("  ", " ") if summary is not None else "")
-                    kw_lower = kw.lower()
-                    if kw_lower not in title_text.lower() and kw_lower not in abstract_text.lower():
-                        continue
                     papers.append({
                         "title": title_text,
                         "source_url": link.text.strip() if link is not None else "",
                         "source": self.name,
                         "authors": authors,
-                        "abstract": abstract_text,
+                        "abstract": summary.text.strip().replace("\n", " ").replace("  ", " ").replace("  ", " ") if summary is not None else "",
                         "published_date": pub_date,
                         "keywords": kw,
                     })
