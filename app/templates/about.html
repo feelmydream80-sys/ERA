@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+{% block title %}About — Power Papers{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
+
+<div class="about-container">
+
+  <section id="sec-intro" class="about-section vh-70 d-flex align-items-center">
+    <div class="row w-100 g-5 align-items-center">
+      <div class="col-lg-6">
+        <h1 class="display-4 fw-bold mb-3 about-title">
+          <span class="text-primary">Power</span> Papers
+        </h1>
+        <p class="lead text-secondary mb-4">
+          전력 분야 최신 논문을 자동으로 수집·공유하는 웹 시스템.
+          전력 연구자라면 놓치지 말아야 할 논문을 카카오톡으로 바로 받아보세요.
+        </p>
+        <div class="row stats-mini g-2">
+          <div class="col-4">
+            <div class="stat-mini-box">
+              <span class="stat-number" data-target="509">0</span>
+              <span class="stat-label">Papers</span>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="stat-mini-box">
+              <span class="stat-number" data-target="6">0</span>
+              <span class="stat-label">Sources</span>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="stat-mini-box">
+              <span class="stat-number" data-target="28">0</span>
+              <span class="stat-label">Keywords</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="network-anim" id="networkAnim">
+          <svg viewBox="0 0 400 300" class="w-100">
+            <circle cx="200" cy="150" r="60" class="node-center" />
+            <circle cx="100" cy="80" r="20" class="node node-1" />
+            <circle cx="300" cy="80" r="20" class="node node-2" />
+            <circle cx="70" cy="220" r="20" class="node node-3" />
+            <circle cx="330" cy="220" r="20" class="node node-4" />
+            <circle cx="200" cy="40" r="20" class="node node-5" />
+            <circle cx="200" cy="260" r="20" class="node node-6" />
+            <line x1="200" y1="150" x2="100" y2="80" class="edge edge-1" />
+            <line x1="200" y1="150" x2="300" y2="80" class="edge edge-2" />
+            <line x1="200" y1="150" x2="70" y2="220" class="edge edge-3" />
+            <line x1="200" y1="150" x2="330" y2="220" class="edge edge-4" />
+            <line x1="200" y1="150" x2="200" y2="40" class="edge edge-5" />
+            <line x1="200" y1="150" x2="200" y2="260" class="edge edge-6" />
+            <text x="200" y="150" text-anchor="middle" dy="5" class="label-center">KCI</text>
+            <text x="100" y="80" text-anchor="middle" dy="4" class="label">arXiv</text>
+            <text x="300" y="80" text-anchor="middle" dy="4" class="label">IEEE</text>
+            <text x="70" y="220" text-anchor="middle" dy="4" class="label">OpenAlex</text>
+            <text x="330" y="220" text-anchor="middle" dy="4" class="label">CrossRef</text>
+            <text x="200" y="40" text-anchor="middle" dy="4" class="label">KCI-API</text>
+            <text x="200" y="260" text-anchor="middle" dy="4" class="label">KCI-Web</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-crawlers" class="about-section vh-100 d-flex align-items-center">
+    <div class="row w-100 g-5 align-items-start">
+      <div class="col-lg-6">
+        <h2 class="section-title mb-4">
+          <span class="text-primary">02.</span> Crawlers
+        </h2>
+        <p class="text-secondary mb-4">6개의 수집 소스, 각기 다른 도전과 해결.</p>
+        <div class="crawler-accordion" id="crawlerAccordion">
+          <div class="crawler-card" data-index="0">
+            <div class="crawler-header" data-bs-toggle="collapse" data-bs-target="#crawler0">
+              <span class="crawler-icon">📄</span>
+              <span class="crawler-name">arXiv</span>
+              <span class="crawler-count">57 papers</span>
+            </div>
+            <div id="crawler0" class="collapse" data-bs-parent="#crawlerAccordion">
+              <div class="crawler-body">
+                <p>1차 도입. 무료 오픈액세스, REST API 제공.</p>
+                <div class="problem-badge text-danger">HTTP 429 rate limit</div>
+                <p class="mt-2 mb-0 small">재시도 로직으로 해결. 일부 키워드는 여전히 timeout 발생.</p>
+              </div>
+            </div>
+          </div>
+          <div class="crawler-card" data-index="1">
+            <div class="crawler-header" data-bs-toggle="collapse" data-bs-target="#crawler1">
+              <span class="crawler-icon">⚡</span>
+              <span class="crawler-name">IEEE</span>
+              <span class="crawler-count">133 papers</span>
+            </div>
+            <div id="crawler1" class="collapse" data-bs-parent="#crawlerAccordion">
+              <div class="crawler-body">
+                <p>전력 분야 핵심. 2차 도입.</p>
+                <div class="problem-badge text-danger">HTML 스크래핑 차단 (SPA + 안티봇)</div>
+                <p class="mt-2 mb-0 small">REST API(<code>api.ieee.org</code>)로 전면 개편. Origin/Referer 헤더 필요.</p>
+              </div>
+            </div>
+          </div>
+          <div class="crawler-card" data-index="2">
+            <div class="crawler-header" data-bs-toggle="collapse" data-bs-target="#crawler2">
+              <span class="crawler-icon">🔓</span>
+              <span class="crawler-name">OpenAlex</span>
+              <span class="crawler-count">173 papers</span>
+            </div>
+            <div id="crawler2" class="collapse" data-bs-parent="#crawlerAccordion">
+              <div class="crawler-body">
+                <p>3차 도입. 무료 API, 초록·인용수 제공.</p>
+                <p class="mb-0 small">안정적인 데이터 소스. 별다른 문제 없음.</p>
+              </div>
+            </div>
+          </div>
+          <div class="crawler-card" data-index="3">
+            <div class="crawler-header" data-bs-toggle="collapse" data-bs-target="#crawler3">
+              <span class="crawler-icon">🌐</span>
+              <span class="crawler-name">CrossRef</span>
+              <span class="crawler-count">134 papers</span>
+            </div>
+            <div id="crawler3" class="collapse" data-bs-parent="#crawlerAccordion">
+              <div class="crawler-body">
+                <p>4차 도입. DOI 기반 보조 소스.</p>
+                <div class="problem-badge text-warning">초록 없음 (대부분)</div>
+                <p class="mt-2 mb-0 small">메타데이터만 제공. 초록이 없는 경우 빈 문자열 처리.</p>
+              </div>
+            </div>
+          </div>
+          <div class="crawler-card" data-index="4">
+            <div class="crawler-header" data-bs-toggle="collapse" data-bs-target="#crawler4">
+              <span class="crawler-icon">🇰🇷</span>
+              <span class="crawler-name">KCI-Web</span>
+              <span class="crawler-count">2 papers</span>
+            </div>
+            <div id="crawler4" class="collapse" data-bs-parent="#crawlerAccordion">
+              <div class="crawler-body">
+                <p>5차 도입. 국내 논문 수집 목적.</p>
+                <div class="problem-badge text-danger">한국 IP 차단 (PA free tier)</div>
+                <div class="problem-badge text-danger">키워드 검색 무시 (서버 버그)</div>
+                <p class="mt-2 mb-0 small">로컬 pre-commit hook으로 우회. post-filter가 350→2 정제.</p>
+              </div>
+            </div>
+          </div>
+          <div class="crawler-card" data-index="5">
+            <div class="crawler-header" data-bs-toggle="collapse" data-bs-target="#crawler5">
+              <span class="crawler-icon">🔌</span>
+              <span class="crawler-name">KCI-API</span>
+              <span class="crawler-count">10 papers</span>
+            </div>
+            <div id="crawler5" class="collapse" data-bs-parent="#crawlerAccordion">
+              <div class="crawler-body">
+                <p>6차 도입. IP 무관 수집 (odcloud OpenAPI).</p>
+                <div class="problem-badge text-warning">키워드 검색 없음</div>
+                <p class="mt-2 mb-0 small">5000건 전체 스캔 후 로컬 필터. 초록 필드 항상 비어있음.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="pipeline-anim" id="pipelineAnim">
+          <svg viewBox="0 0 500 500" class="w-100">
+            <g class="layer layer-collect">
+              <text x="250" y="30" text-anchor="middle" class="layer-label">COLLECT</text>
+              <rect x="50" y="50" width="120" height="40" rx="8" class="node-pipe node-arxiv" />
+              <text x="110" y="75" text-anchor="middle" class="pipe-label">arXiv</text>
+              <rect x="190" y="50" width="120" height="40" rx="8" class="node-pipe node-ieee" />
+              <text x="250" y="75" text-anchor="middle" class="pipe-label">IEEE</text>
+              <rect x="330" y="50" width="120" height="40" rx="8" class="node-pipe node-openalex" />
+              <text x="390" y="75" text-anchor="middle" class="pipe-label">OpenAlex</text>
+              <rect x="50" y="110" width="120" height="40" rx="8" class="node-pipe node-crossref" />
+              <text x="110" y="135" text-anchor="middle" class="pipe-label">CrossRef</text>
+              <rect x="190" y="110" width="120" height="40" rx="8" class="node-pipe node-kci-web" />
+              <text x="250" y="135" text-anchor="middle" class="pipe-label">KCI-Web</text>
+              <rect x="330" y="110" width="120" height="40" rx="8" class="node-pipe node-kci-api" />
+              <text x="390" y="135" text-anchor="middle" class="pipe-label">KCI-API</text>
+            </g>
+            <line x1="250" y1="160" x2="250" y2="200" class="arrow-down" />
+            <g class="layer layer-filter">
+              <text x="250" y="225" text-anchor="middle" class="layer-label">FILTER</text>
+              <rect x="100" y="245" width="300" height="50" rx="10" class="node-pipe node-filter" />
+              <text x="250" y="275" text-anchor="middle" class="pipe-label filter-label">filter_papers_by_keywords()</text>
+            </g>
+            <line x1="250" y1="300" x2="250" y2="340" class="arrow-down" />
+            <g class="layer layer-storage">
+              <text x="250" y="365" text-anchor="middle" class="layer-label">STORAGE</text>
+              <rect x="100" y="385" width="300" height="50" rx="10" class="node-pipe node-storage" />
+              <text x="250" y="415" text-anchor="middle" class="pipe-label">papers.db (Git tracked)</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-problems" class="about-section vh-100 d-flex align-items-center">
+    <div class="row w-100 g-5 align-items-start">
+      <div class="col-lg-6">
+        <h2 class="section-title mb-4">
+          <span class="text-primary">03.</span> Problems &amp; Solutions
+        </h2>
+        <p class="text-secondary mb-4">데이터 품질을 해쳤던 4가지 문제와 그 해결.</p>
+        <div class="problems-list">
+          <div class="problem-card">
+            <div class="d-flex align-items-center mb-2">
+              <span class="problem-num">#1</span>
+              <span class="problem-title">keywords=kw 데이터 오염</span>
+              <span class="ms-auto badge bg-danger">Before</span>
+            </div>
+            <p class="mb-1 small">검색어 "HVDC" → keywords 필드에 "HVDC" 저장. "자폐 그림책 앱" 논문에 #HVDC 배지.</p>
+            <div class="problem-toggle">
+              <span class="badge bg-success">After</span>
+              <span class="small text-secondary ms-1">keywords="" (빈 값). 실제 논문 키워드만 저장. KCI-API는 API 제공 키워드 사용.</span>
+            </div>
+          </div>
+          <div class="problem-card">
+            <div class="d-flex align-items-center mb-2">
+              <span class="problem-num">#2</span>
+              <span class="problem-title">KCI 관련 없는 논문 노이즈</span>
+              <span class="ms-auto badge bg-danger">Before</span>
+            </div>
+            <p class="mb-1 small">KCI 서버가 키워드 무시하고 최신 논문 50개 반환 → 영양학/암/식품과학 논문이 전력 검색어로 수집.</p>
+            <div class="problem-toggle">
+              <span class="badge bg-success">After</span>
+              <span class="small text-secondary ms-1">post-filter()가 KCI-Web 논문 검증. 350개 → 2개 통과 (99.4% 제거).</span>
+            </div>
+          </div>
+          <div class="problem-card">
+            <div class="d-flex align-items-center mb-2">
+              <span class="problem-num">#3</span>
+              <span class="problem-title">두 KCI 크롤러 이름 충돌</span>
+              <span class="ms-auto badge bg-danger">Before</span>
+            </div>
+            <p class="mb-1 small">kci.py → name="KCI", kci_openapi.py → name="KCI". Paper.source 동일, CrawlLog 서로 덮어씀.</p>
+            <div class="problem-toggle">
+              <span class="badge bg-success">After</span>
+              <span class="small text-secondary ms-1">kci.py="KCI-Web", kci_openapi.py="KCI-API". 각각 로그/필터 가능.</span>
+            </div>
+          </div>
+          <div class="problem-card">
+            <div class="d-flex align-items-center mb-2">
+              <span class="problem-num">#4</span>
+              <span class="problem-title">PA papers.db 동기화 실패</span>
+              <span class="ms-auto badge bg-danger">Before</span>
+            </div>
+            <p class="mb-1 small">git pull (merge) → binary 충돌로 papers.db 갱신 안 됨.</p>
+            <div class="problem-toggle">
+              <span class="badge bg-success">After</span>
+              <span class="small text-secondary ms-1">webhook: git fetch + git reset --hard → 강제 동기화.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="bf-slider" id="bfSlider">
+          <div class="bf-card">
+            <div class="bf-header">
+              <span class="bf-label bf-before">Before</span>
+              <span class="bf-arrow">→</span>
+              <span class="bf-label bf-after">After</span>
+            </div>
+            <div class="bf-body">
+              <div class="bf-col bf-before-col">
+                <div class="bf-code">keywords = "HVDC"</div>
+                <div class="bf-desc">검색어가 논문 키워드로 저장</div>
+              </div>
+              <div class="bf-col bf-after-col">
+                <div class="bf-code">keywords = ""</div>
+                <div class="bf-desc">실제 키워드만 저장</div>
+              </div>
+            </div>
+          </div>
+          <div class="bf-card">
+            <div class="bf-header">
+              <span class="bf-label bf-before">Before</span>
+              <span class="bf-arrow">→</span>
+              <span class="bf-label bf-after">After</span>
+            </div>
+            <div class="bf-body">
+              <div class="bf-col bf-before-col">
+                <div class="bf-code">350 papers (noise)</div>
+                <div class="bf-desc">영양학·암·식품 논문 포함</div>
+              </div>
+              <div class="bf-col bf-after-col">
+                <div class="bf-code countdown" data-from="350" data-to="2">2 papers</div>
+                <div class="bf-desc">99.4% 노이즈 제거</div>
+              </div>
+            </div>
+          </div>
+          <div class="bf-card">
+            <div class="bf-header">
+              <span class="bf-label bf-before">Before</span>
+              <span class="bf-arrow">→</span>
+              <span class="bf-label bf-after">After</span>
+            </div>
+            <div class="bf-body">
+              <div class="bf-col bf-before-col">
+                <div class="bf-code">source = "KCI"</div>
+                <div class="bf-desc">두 크롤러 구분 불가</div>
+              </div>
+              <div class="bf-col bf-after-col">
+                <div class="bf-code">source = "KCI-Web/API"</div>
+                <div class="bf-desc">개별 로그·필터 가능</div>
+              </div>
+            </div>
+          </div>
+          <div class="bf-card">
+            <div class="bf-header">
+              <span class="bf-label bf-before">Before</span>
+              <span class="bf-arrow">→</span>
+              <span class="bf-label bf-after">After</span>
+            </div>
+            <div class="bf-body">
+              <div class="bf-col bf-before-col">
+                <div class="bf-code">git pull (merge)</div>
+                <div class="bf-desc">binary 충돌로 갱신 실패</div>
+              </div>
+              <div class="bf-col bf-after-col">
+                <div class="bf-code">git fetch + reset</div>
+                <div class="bf-desc">강제 동기화 성공</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-architecture" class="about-section vh-100 d-flex align-items-center">
+    <div class="row w-100 g-5 align-items-start">
+      <div class="col-lg-6">
+        <h2 class="section-title mb-4">
+          <span class="text-primary">04.</span> Architecture
+        </h2>
+        <p class="text-secondary mb-4">4단계로 이루어진 데이터 파이프라인.</p>
+        <div class="arch-list">
+          <div class="arch-card" data-layer="1">
+            <div class="arch-layer d-flex align-items-center">
+              <span class="arch-num">1</span>
+              <div class="ms-3">
+                <div class="arch-layer-title">Collect</div>
+                <div class="arch-layer-desc">APScheduler가 매시간 6개 크롤러 실행. 각 크롤러는 키워드 목록 순회. source_url UNIQUE로 중복 방지.</div>
+              </div>
+            </div>
+          </div>
+          <div class="arch-card" data-layer="2">
+            <div class="arch-layer d-flex align-items-center">
+              <span class="arch-num">2</span>
+              <div class="ms-3">
+                <div class="arch-layer-title">Filter</div>
+                <div class="arch-layer-desc">수집 완료 후 filter_papers_by_keywords() 실행. KCI-Web 논문만 대상. 검색어가 제목/초록에 없으면 삭제.</div>
+              </div>
+            </div>
+          </div>
+          <div class="arch-card" data-layer="3">
+            <div class="arch-layer d-flex align-items-center">
+              <span class="arch-num">3</span>
+              <div class="ms-3">
+                <div class="arch-layer-title">Storage</div>
+                <div class="arch-layer-desc">papers.db (SQLite) — Git에 추적됨. pre-commit hook: commit 전 크롤러 실행 + git add papers.db.</div>
+              </div>
+            </div>
+          </div>
+          <div class="arch-card" data-layer="4">
+            <div class="arch-layer d-flex align-items-center">
+              <span class="arch-num">4</span>
+              <div class="ms-3">
+                <div class="arch-layer-title">Deploy</div>
+                <div class="arch-layer-desc">git push → GitHub Webhook → PA. git fetch + reset --hard. WSGI touch → uWSGI reload.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="arch-diagram" id="archDiagram">
+          <svg viewBox="0 0 450 500" class="w-100">
+            <rect x="25" y="10" width="400" height="90" rx="12" class="arch-layer-box layer-1" />
+            <text x="50" y="45" class="arch-layer-num">Layer 1</text>
+            <text x="50" y="70" class="arch-layer-name">COLLECT</text>
+            <text x="160" y="45" class="arch-node-text">arXiv • IEEE • OpenAlex</text>
+            <text x="160" y="70" class="arch-node-text">CrossRef • KCI-Web • KCI-API</text>
+            <line x1="225" y1="105" x2="225" y2="140" class="arch-arrow" />
+            <rect x="25" y="145" width="400" height="90" rx="12" class="arch-layer-box layer-2" />
+            <text x="50" y="180" class="arch-layer-num">Layer 2</text>
+            <text x="50" y="205" class="arch-layer-name">FILTER</text>
+            <text x="160" y="205" class="arch-node-text">filter_papers_by_keywords()</text>
+            <text x="160" y="180" class="arch-node-text arch-node-small">KCI-Web: 350 → 2 papers</text>
+            <line x1="225" y1="240" x2="225" y2="275" class="arch-arrow" />
+            <rect x="25" y="280" width="400" height="90" rx="12" class="arch-layer-box layer-3" />
+            <text x="50" y="315" class="arch-layer-num">Layer 3</text>
+            <text x="50" y="340" class="arch-layer-name">STORAGE</text>
+            <text x="160" y="340" class="arch-node-text">papers.db (Git tracked)</text>
+            <text x="160" y="315" class="arch-node-text arch-node-small">pre-commit → git add papers.db</text>
+            <line x1="225" y1="375" x2="225" y2="410" class="arch-arrow" />
+            <rect x="25" y="415" width="400" height="75" rx="12" class="arch-layer-box layer-4" />
+            <text x="50" y="450" class="arch-layer-num">Layer 4</text>
+            <text x="50" y="475" class="arch-layer-name">DEPLOY</text>
+            <text x="160" y="450" class="arch-node-text">GitHub → Webhook → PA</text>
+            <text x="160" y="475" class="arch-node-text arch-node-small">git fetch + reset → WSGI touch</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-status" class="about-section d-flex align-items-center" style="min-height:60vh">
+    <div class="row w-100 g-4 text-center">
+      <div class="col-12 mb-4">
+        <h2 class="section-title">
+          <span class="text-primary">05.</span> Status
+        </h2>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="status-card">
+          <div class="status-number" data-target="509">0</div>
+          <div class="status-label">Total Papers</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="status-card">
+          <div class="status-number" data-target="6">0</div>
+          <div class="status-label">Data Sources</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="status-card">
+          <div class="status-number" data-target="28">0</div>
+          <div class="status-label">Active Keywords</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="status-card">
+          <div class="status-number" data-target="2">0</div>
+          <div class="status-label">KCI-Web (filtered)</div>
+        </div>
+      </div>
+      <div class="col-12 mt-4">
+        <p class="text-secondary small">
+          APScheduler runs every hour. Last build: {{ now }}
+        </p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/about.js') }}"></script>
+{% endblock %}

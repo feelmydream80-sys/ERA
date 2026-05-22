@@ -91,6 +91,12 @@ def health():
     }
 
 
+@bp.route("/about")
+def about():
+    from datetime import datetime
+    return render_template("about.html", now=datetime.now().strftime("%Y-%m-%d %H:%M"))
+
+
 @bp.route("/webhook/update", methods=["POST"])
 def webhook_update():
     secret = current_app.config.get("WEBHOOK_SECRET", "").encode()
