@@ -4,7 +4,7 @@
   padding: 0 1rem;
 }
 .about-section {
-  padding: 3rem 0;
+  padding: 2rem 0;
   opacity: 0;
   transform: translateY(40px);
   transition: opacity 0.8s ease, transform 0.8s ease;
@@ -14,31 +14,33 @@
   transform: translateY(0);
 }
 .section-title {
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 700;
 }
-.vh-70 { min-height: 70vh; }
+.about-section:not(:last-child) {
+  border-bottom: 1px solid #222;
+}
 
 /* Intro */
 .about-title {
-  font-size: 3.5rem;
+  font-size: 2.8rem;
   letter-spacing: -0.02em;
 }
 .stats-mini .stat-mini-box {
   background: #1a1a1a;
   border: 1px solid #333;
-  border-radius: 12px;
-  padding: 1rem;
+  border-radius: 10px;
+  padding: 0.75rem;
   text-align: center;
 }
 .stat-number {
   display: block;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #0d6efd;
 }
 .stat-label {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: #888;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -91,12 +93,12 @@
 .crawler-accordion {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.3rem;
 }
 .crawler-card {
   background: #1a1a1a;
   border: 1px solid #333;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   transition: border-color 0.3s;
 }
@@ -104,9 +106,9 @@
 .crawler-header {
   display: flex;
   align-items: center;
-  padding: 1rem 1.25rem;
+  padding: 0.6rem 1rem;
   cursor: pointer;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 .crawler-icon { font-size: 1.2rem; }
 .crawler-name { font-weight: 600; flex: 1; }
@@ -116,8 +118,8 @@
   font-weight: 500;
 }
 .crawler-body {
-  padding: 0 1.25rem 1rem 1.25rem;
-  font-size: 0.9rem;
+  padding: 0 1rem 0.75rem 1rem;
+  font-size: 0.85rem;
   color: #aaa;
 }
 .problem-badge {
@@ -181,13 +183,13 @@
 .problems-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 .problem-card {
   background: #1a1a1a;
   border: 1px solid #333;
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
 }
 .problem-num {
   display: inline-flex;
@@ -270,13 +272,13 @@
 .arch-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 .arch-card {
   background: #1a1a1a;
   border: 1px solid #333;
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
   transition: border-color 0.3s;
   cursor: default;
 }
@@ -347,8 +349,8 @@
 .status-card {
   background: #1a1a1a;
   border: 1px solid #333;
-  border-radius: 16px;
-  padding: 2rem 1rem;
+  border-radius: 12px;
+  padding: 1.25rem 0.75rem;
   transition: border-color 0.3s, transform 0.3s;
 }
 .status-card:hover {
@@ -356,14 +358,14 @@
   transform: translateY(-4px);
 }
 .status-number {
-  font-size: 3rem;
+  font-size: 2.2rem;
   font-weight: 800;
   color: #0d6efd;
   line-height: 1;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 .status-label {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: #888;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -371,10 +373,10 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .about-title { font-size: 2.5rem; }
-  .vh-70, .vh-100 { min-height: auto; }
-  .section-title { font-size: 1.6rem; }
-  .status-number { font-size: 2rem; }
+  .about-title { font-size: 2rem; }
+  .about-section { padding: 1.5rem 0; }
+  .section-title { font-size: 1.3rem; }
+  .status-number { font-size: 1.6rem; }
   .bf-body { flex-direction: column; }
   .network-anim, .pipeline-anim, .arch-diagram { display: none; }
 }

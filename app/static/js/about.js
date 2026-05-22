@@ -14,10 +14,11 @@
     sections.forEach(function (sec) {
       if (isInView(sec)) {
         sec.classList.add('visible');
+        var secId = sec.id || '';
         var nums = sec.querySelectorAll('.stat-number, .status-number');
         nums.forEach(function (el) {
-          var key = el.dataset.target;
-          if (key && !counted[key]) {
+          var key = secId + '-' + el.dataset.target;
+          if (el.dataset.target && !counted[key]) {
             counted[key] = true;
             countUp(el, parseInt(el.dataset.target, 10));
           }
